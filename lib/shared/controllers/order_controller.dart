@@ -30,9 +30,21 @@ class OrderController extends GetxController {
       final token = _authController.token;
       print('AuthController token: ${token.isNotEmpty ? token.substring(0, token.length > 20 ? 20 : token.length) : "vacío"}...');
       print('StoreController currentStore: ${_storeController.currentStore?['_id']}');
+      print('Is logged in: ${_authController.isLoggedIn}');
     }
-    // Cargar órdenes al inicializar
-    loadOrdersForCurrentStore();
+    
+    // ⭐ NO CARGAR ÓRDENES AUTOMÁTICAMENTE - ESPERAR A QUE SE ESTABLEZCA LA TIENDA
+    // Las órdenes se cargarán cuando se establezca currentStore a través del listener
+    
+    // ⭐ ESCUCHAR CAMBIOS EN LA TIENDA ACTUAL
+    ever(_storeController.currentStoreRx, (store) {
+      if (kDebugMode) {
+        print('🔵 OrderController: Store changed to ${store?['name']}');
+      }
+      if (store != null && _authController.isLoggedIn) {
+        loadOrders(storeId: store['_id']);
+      }
+    });
   }
 
   // ⭐ MÉTODO PARA REFRESCAR CUANDO CAMBIE LA TIENDA
@@ -50,19 +62,14 @@ class OrderController extends GetxController {
       print('Current store: $currentStore');
     }
     
-    // Si es admin o no hay tienda, cargar todas las órdenes de los últimos 30 días
-    if (currentStore == null || _authController.currentUser?['role'] == 'admin') {
-      if (kDebugMode) {
-        print('Usuario admin o sin tienda: cargando todas las órdenes de los últimos 30 días');
-      }
-      final now = DateTime.now();
-      final startDate = now.subtract(const Duration(days: 30));
-      await loadOrders(
-        startDate: startDate.toIso8601String(),
-        endDate: now.toIso8601String(),
-      );
-    } else {
+    // Siempre cargar por tienda, igual que en versión móvil
+    if (currentStore != null) {
       await loadOrders(storeId: currentStore['_id']);
+    } else {
+      if (kDebugMode) {
+        print('No hay tienda seleccionada, limpiando órdenes');
+      }
+      _orders.clear();
     }
   }
 
@@ -87,11 +94,10 @@ class OrderController extends GetxController {
         print('startDate: $startDate, endDate: $endDate');
       }
       
-      // ✅ Si no hay storeId pero sí hay filtros de fecha, permitir la consulta (para admin)
-      // Si no hay ni storeId ni fechas, limpiar y retornar
-      if (effectiveStoreId == null && startDate == null && endDate == null) {
+      // ✅ Validar que hay un storeId antes de cargar (igual que móvil)
+      if (effectiveStoreId == null) {
         if (kDebugMode) {
-          print('No hay storeId ni fechas, limpiando órdenes');
+          print('No hay storeId, limpiando órdenes');
         }
         _orders.clear();
         return;
@@ -102,7 +108,7 @@ class OrderController extends GetxController {
       }
       
       final result = await _orderProvider.getOrders(
-        storeId: effectiveStoreId, // Puede ser null para admin
+        storeId: effectiveStoreId, // ⭐ Siempre usar storeId
         customerId: customerId,
         status: status,
         startDate: startDate,

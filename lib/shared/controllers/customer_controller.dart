@@ -32,10 +32,16 @@ class CustomerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadCustomers();
+    // ⭐ NO CARGAR CLIENTES AUTOMÁTICAMENTE - ESPERAR A QUE SE ESTABLEZCA LA TIENDA
+    // Los clientes se cargarán cuando se establezca currentStore a través del listener
+    
     ever(_searchQuery, (_) => filterCustomers());
     // Recargar clientes cuando cambie la tienda seleccionada
-    ever(_storeController.currentStoreRx, (_) => loadCustomers());
+    ever(_storeController.currentStoreRx, (store) {
+      if (store != null && _authController.isLoggedIn) {
+        loadCustomers();
+      }
+    });
   }
 
   // Filtrar clientes

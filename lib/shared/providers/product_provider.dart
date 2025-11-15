@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
@@ -39,24 +39,48 @@ class ProductProvider {
       final uri = Uri.parse('$baseUrl/products')
           .replace(queryParameters: queryParams.isEmpty ? null : queryParams);
       
+      if (kDebugMode) {
+        print('🔵 ProductProvider: Fetching products from $uri');
+        print('   - storeId: $storeId');
+        print('   - queryParams: $queryParams');
+      }
+      
       final response = await http.get(uri, headers: _headers);
       final data = jsonDecode(response.body);
+
+      if (kDebugMode) {
+        print('🔵 ProductProvider: Response status: ${response.statusCode}');
+        print('   - Response body type: ${data.runtimeType}');
+        if (data is Map) {
+          print('   - status: ${data['status']}');
+          print('   - results: ${data['results']}');
+        }
+      }
 
       if (response.statusCode == 200) {
         // Backend devuelve {status: 'success', results: X, data: {products: [...]}}
         final products = data['data']['products'];
+        if (kDebugMode) {
+          print('✅ ProductProvider: Found ${products is List ? products.length : 0} products');
+        }
         if (products is List) {
           return {'success': true, 'data': products};
         } else {
           return {'success': false, 'message': 'Formato de respuesta inválido'};
         }
       } else {
+        if (kDebugMode) {
+          print('❌ ProductProvider: Error ${response.statusCode}');
+        }
         return {
           'success': false,
           'message': data['message'] ?? 'Error obteniendo productos'
         };
       }
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ ProductProvider: Exception: $e');
+      }
       return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
@@ -97,7 +121,8 @@ class ProductProvider {
     required String storeId,
     required int stock,
     required DateTime expiryDate,
-    File? imageFile,
+    dynamic imageFile,
+    String? imageBytes,
   }) async {
     try {
       var request = http.MultipartRequest(
@@ -120,7 +145,17 @@ class ProductProvider {
       // Enviar fecha de vencimiento en formato ISO 8601
       request.fields['expiryDate'] = expiryDate.toIso8601String();
 
-      if (imageFile != null) {
+      if (imageFile != null && imageBytes != null) {
+        // Para web, usar imageBytes (base64)
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'foto',
+            Uri.parse(imageBytes).data!.contentAsBytes(),
+            filename: 'product_image.jpg',
+          ),
+        );
+      } else if (imageFile != null) {
+        // Para móvil, usar el archivo directamente
         // Detectar el tipo MIME del archivo
         final mimeType = lookupMimeType(imageFile.path);
         
@@ -170,7 +205,8 @@ class ProductProvider {
     String? supplierId,
     String? locationId,
     DateTime? expiryDate,
-    File? imageFile,
+    dynamic imageFile,
+    String? imageBytes,
   }) async {
     try {
       var request = http.MultipartRequest(
@@ -195,7 +231,17 @@ class ProductProvider {
         request.fields['expiryDate'] = expiryDate.toIso8601String();
       }
 
-      if (imageFile != null) {
+      if (imageFile != null && imageBytes != null) {
+        // Para web, usar imageBytes (base64)
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'foto',
+            Uri.parse(imageBytes).data!.contentAsBytes(),
+            filename: 'product_image.jpg',
+          ),
+        );
+      } else if (imageFile != null) {
+        // Para móvil, usar el archivo directamente
         // Detectar el tipo MIME del archivo
         final mimeType = lookupMimeType(imageFile.path);
         
@@ -284,6 +330,21 @@ class ProductProvider {
     } catch (e) {
       return {'success': false, 'message': 'Error de conexión: $e'};
     }
+  }
+
+  // Ajustar stock (wrapper simplificado para updateStock)
+  Future<Map<String, dynamic>> adjustStock({
+    required String productId,
+    required int adjustment,
+  }) async {
+    final operation = adjustment > 0 ? 'add' : 'subtract';
+    final quantity = adjustment.abs();
+    
+    return await updateStock(
+      id: productId,
+      quantity: quantity,
+      operation: operation,
+    );
   }
 
   // Buscar producto por nombre o código de barras

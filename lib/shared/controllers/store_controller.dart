@@ -9,8 +9,8 @@ import 'product_controller.dart';
 import 'order_controller.dart';
 import 'customer_controller.dart';
 import 'discount_controller.dart';
+import 'location_controller.dart';
 // import 'cash_controller.dart'; // No disponible en web
-// import 'location_controller.dart'; // No disponible en web
 
 class StoreController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
@@ -35,6 +35,10 @@ class StoreController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (kDebugMode) {
+      print('🔵 StoreController: onInit called');
+      print('   - isLoggedIn: ${_authController.isLoggedIn}');
+    }
     // No cargar tiendas automáticamente, solo cuando el usuario esté autenticado
     if (_authController.isLoggedIn) {
       loadStores();
@@ -42,7 +46,7 @@ class StoreController extends GetxController {
   }
 
   // Cargar tiendas
-  Future<void> loadStores() async {
+  Future<void> loadStores({bool autoSelect = true}) async {
     // Verificar que haya un token antes de intentar cargar
     if (_authController.token.isEmpty) {
       _errorMessage.value = 'No hay sesión activa';
@@ -58,8 +62,14 @@ class StoreController extends GetxController {
       if (result['success']) {
         _stores.value = List<Map<String, dynamic>>.from(result['data']);
         
-        // ⭐ MEJORAR LA SELECCIÓN DE TIENDA
-        await _selectInitialStore();
+        // ⭐ SOLO SELECCIONAR TIENDA INICIAL SI autoSelect ES TRUE
+        if (autoSelect) {
+          await _selectInitialStore();
+        } else {
+          if (kDebugMode) {
+            print('🔵 StoreController: Tiendas cargadas sin auto-selección (esperando selección manual)');
+          }
+        }
       } else {
         _errorMessage.value = result['message'] ?? 'Error cargando tiendas';
         Get.snackbar(
@@ -86,11 +96,25 @@ class StoreController extends GetxController {
 
   // ⭐ NUEVO MÉTODO PARA SELECCIONAR LA TIENDA INICIAL
   Future<void> _selectInitialStore() async {
-    if (_stores.isEmpty) return;
+    if (kDebugMode) {
+      print('🔵 StoreController: _selectInitialStore called');
+      print('   - stores count: ${_stores.length}');
+    }
+    
+    if (_stores.isEmpty) {
+      if (kDebugMode) {
+        print('❌ StoreController: No stores available');
+      }
+      return;
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedStoreId = prefs.getString('selected_store_id');
+      
+      if (kDebugMode) {
+        print('   - savedStoreId from prefs: $savedStoreId');
+      }
       
       // Intentar restaurar la tienda previamente seleccionada
       if (savedStoreId != null) {
@@ -101,6 +125,9 @@ class StoreController extends GetxController {
         
         if (savedStore.isNotEmpty) {
           _currentStore.value = savedStore;
+          if (kDebugMode) {
+            print('✅ StoreController: Restored saved store: ${savedStore['name']}');
+          }
           return;
         }
       }
@@ -109,7 +136,14 @@ class StoreController extends GetxController {
       _currentStore.value = _stores.first;
       await _saveSelectedStore(_stores.first);
       
+      if (kDebugMode) {
+        print('✅ StoreController: Selected first store: ${_stores.first['name']}');
+      }
+      
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ StoreController: Error in _selectInitialStore: $e');
+      }
       // Fallback: seleccionar la primera tienda
       if (_stores.isNotEmpty) {
         _currentStore.value = _stores.first;
@@ -166,6 +200,12 @@ class StoreController extends GetxController {
       if (Get.isRegistered<DiscountController>()) {
         final discountController = Get.find<DiscountController>();
         await discountController.refreshForStore();
+      }
+      
+      // LocationController - Ubicaciones por tienda
+      if (Get.isRegistered<LocationController>()) {
+        final locationController = Get.find<LocationController>();
+        await locationController.refreshForStore();
       }
       
       // CashController - Sistema de caja (No disponible en web)

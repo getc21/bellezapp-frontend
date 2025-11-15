@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../providers/discount_provider.dart';
 import 'auth_controller.dart';
 import 'store_controller.dart';
@@ -33,7 +34,19 @@ class DiscountController extends GetxController {
     if (Get.isRegistered<StoreController>()) {
     }
     
-    loadDiscounts();
+    // ⭐ NO CARGAR DESCUENTOS AUTOMÁTICAMENTE - ESPERAR A QUE SE ESTABLEZCA LA TIENDA
+    // Los descuentos se cargarán cuando se establezca currentStore a través del listener
+    
+    // ⭐ ESCUCHAR CAMBIOS EN LA TIENDA ACTUAL
+    ever(_storeController.currentStoreRx, (store) {
+      if (kDebugMode) {
+        print('🔵 DiscountController: Store changed to ${store?['name']}');
+      }
+      if (store != null && _authController.isLoggedIn) {
+        loadDiscounts();
+      }
+    });
+    
     ever(_searchQuery, (_) => filterDiscounts());
   }
 

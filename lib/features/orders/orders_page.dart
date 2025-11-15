@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
+import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/controllers/order_controller.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -17,11 +18,51 @@ class OrdersPage extends StatefulWidget {
 class _OrdersPageState extends State<OrdersPage> {
   String _paymentFilter = 'Todos';
   final OrderController _orderController = Get.find<OrderController>();
+  late final ScrollController _scrollController;
+  
+  // Variables para optimizar rendimiento
+  List<Map<String, dynamic>> _filteredOrders = [];
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _orderController.loadOrdersForCurrentStore();
+    _scrollController = ScrollController();
+    
+    // Cargar datos de forma no bloqueante
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized) {
+        _loadOrdersOptimized();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadOrdersOptimized() async {
+    _hasInitialized = true;
+    // Solo cargar si no hay datos ya cargados
+    if (_orderController.orders.isEmpty) {
+      await _orderController.loadOrdersForCurrentStore();
+    }
+    if (mounted) {
+      _updateFilteredOrders();
+    }
+  }
+
+  void _updateFilteredOrders() {
+    // Calcular órdenes filtradas sin reconstruir todo
+    _filteredOrders = _orderController.orders
+        .where((o) => _paymentFilter == 'Todos' || o['paymentMethod'] == _paymentFilter)
+        .toList();
+    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -45,12 +86,15 @@ class _OrdersPageState extends State<OrdersPage> {
                         ))
                     .toList(),
                 onChanged: (value) {
-                  setState(() => _paymentFilter = value!);
+                  setState(() {
+                    _paymentFilter = value!;
+                    _updateFilteredOrders();
+                  });
                 },
               ),
               const Spacer(),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => Get.toNamed('/orders/create'),
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Orden'),
               ),
@@ -61,11 +105,13 @@ class _OrdersPageState extends State<OrdersPage> {
           // Orders Table
           Obx(() {
             if (_orderController.isLoading) {
-              return const Card(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppSizes.spacing24),
-                    child: CircularProgressIndicator(),
+              return SizedBox(
+                height: 600,
+                child: Card(
+                  child: Center(
+                    child: LoadingIndicator(
+                      message: 'Cargando órdenes...',
+                    ),
                   ),
                 ),
               );
@@ -92,6 +138,28 @@ class _OrdersPageState extends State<OrdersPage> {
               );
             }
 
+            // Si no hay órdenes filtradas pero sí hay órdenes totales
+            if (_filteredOrders.isEmpty) {
+              return Card(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSizes.spacing24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.filter_list_outlined, size: 64, color: AppColors.textSecondary),
+                        const SizedBox(height: AppSizes.spacing16),
+                        const Text(
+                          'No hay órdenes con este filtro',
+                          style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.spacing16),
@@ -101,6 +169,9 @@ class _OrdersPageState extends State<OrdersPage> {
                     columnSpacing: 12,
                     horizontalMargin: 12,
                     minWidth: 1000,
+                    scrollController: _scrollController,
+                    isHorizontalScrollBarVisible: true,
+                    isVerticalScrollBarVisible: true,
                     columns: const [
                       DataColumn2(label: Text('ID'), size: ColumnSize.S),
                       DataColumn2(label: Text('Cliente'), size: ColumnSize.L),
@@ -122,11 +193,8 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   List<DataRow2> _buildOrderRows() {
-    final filteredOrders = _orderController.orders
-        .where((o) => _paymentFilter == 'Todos' || o['paymentMethod'] == _paymentFilter)
-        .toList();
-
-    return filteredOrders.map((order) {
+    // Usar órdenes ya filtradas en lugar de recalcular
+    return _filteredOrders.map((order) {
       final items = order['items'] as List? ?? [];
       final customerData = order['customerId'];
       

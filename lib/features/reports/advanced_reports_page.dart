@@ -65,15 +65,19 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    // Capturar el FocusScope antes del await
+    final focusScope = FocusScope.of(context);
+    
     final DateTime? picked = await showDatePicker(
       context: context,
       locale: const Locale('es', 'ES'),
       initialDate: isStartDate ? _startDate : _endDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
+      confirmText: 'Seleccionar', // Cambiar texto del botón
     );
 
-    if (picked != null) {
+    if (mounted && picked != null) {
       setState(() {
         if (isStartDate) {
           _startDate = picked;
@@ -82,6 +86,13 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
         }
         _loadReports();
       });
+      
+      // Remover el foco de cualquier widget DESPUÉS del setState
+      if (mounted) {
+        focusScope.unfocus();
+        // Pequeño delay para asegurar que el UI se actualice completamente
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
     }
   }
 

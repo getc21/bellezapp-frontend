@@ -94,7 +94,33 @@ class AuthController extends GetxController {
             // ⭐ CARGAR LAS TIENDAS DESPUÉS DE CARGAR EL USUARIO DESDE CACHE
             try {
               final storeController = Get.find<StoreController>();
-              await storeController.loadStores();
+              // ⭐ CARGAR TIENDAS SIN AUTO-SELECCIÓN para controlar manualmente la tienda
+              await storeController.loadStores(autoSelect: false);
+              
+              // ⭐ Obtener rol y tiendas del usuario
+              final userRole = userData['role'] as String?;
+              final userStores = userData['stores'] as List<dynamic>?;
+              
+              if (userRole == 'admin') {
+                // ⭐ ADMIN: Seleccionar primera tienda del sistema
+                if (storeController.stores.isNotEmpty) {
+                  storeController.selectStore(storeController.stores.first);
+                  
+                  if (kDebugMode) {
+                    print('✅ AuthController: Admin - Primera tienda del sistema desde cache: ${storeController.stores.first['name']}');
+                  }
+                }
+              } else {
+                // ⭐ EMPLEADO: Seleccionar su tienda asignada
+                if (userStores != null && userStores.isNotEmpty) {
+                  final firstStore = userStores[0] as Map<String, dynamic>;
+                  storeController.selectStore(firstStore);
+                  
+                  if (kDebugMode) {
+                    print('✅ AuthController: Empleado - Tienda asignada desde cache: ${firstStore['name']}');
+                  }
+                }
+              }
             } catch (e) {
               if (kDebugMode) {
                 print('Error cargando tiendas desde cache: $e');
@@ -138,7 +164,34 @@ class AuthController extends GetxController {
         // ⭐ CARGAR LAS TIENDAS DESPUÉS DE CARGAR EL USUARIO DESDE API
         try {
           final storeController = Get.find<StoreController>();
-          await storeController.loadStores();
+          // ⭐ CARGAR TIENDAS SIN AUTO-SELECCIÓN para controlar manualmente la tienda
+          await storeController.loadStores(autoSelect: false);
+          
+          // ⭐ Obtener rol y tiendas del usuario
+          final userData = result['data'];
+          final userRole = userData['role'] as String?;
+          final userStores = userData['stores'] as List<dynamic>?;
+          
+          if (userRole == 'admin') {
+            // ⭐ ADMIN: Seleccionar primera tienda del sistema
+            if (storeController.stores.isNotEmpty) {
+              storeController.selectStore(storeController.stores.first);
+              
+              if (kDebugMode) {
+                print('✅ AuthController: Admin - Primera tienda del sistema desde API: ${storeController.stores.first['name']}');
+              }
+            }
+          } else {
+            // ⭐ EMPLEADO: Seleccionar su tienda asignada
+            if (userStores != null && userStores.isNotEmpty) {
+              final firstStore = userStores[0] as Map<String, dynamic>;
+              storeController.selectStore(firstStore);
+              
+              if (kDebugMode) {
+                print('✅ AuthController: Empleado - Tienda asignada desde API: ${firstStore['name']}');
+              }
+            }
+          }
         } catch (e) {
           if (kDebugMode) {
             print('Error cargando tiendas desde API: $e');
@@ -218,6 +271,10 @@ class AuthController extends GetxController {
     _errorMessage.value = '';
 
     try {
+      // ⭐ LIMPIAR TIENDA GUARDADA ANTES DE HACER LOGIN
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('selected_store_id');
+      
       final result = await _authProvider.login(username, password);
       
       if (result['success']) {
@@ -230,11 +287,45 @@ class AuthController extends GetxController {
         // Cargar las tiendas después del login exitoso
         try {
           final storeController = Get.find<StoreController>();
-          await storeController.loadStores();
           
-          // Si es admin y no hay tiendas, mostrar modal para crear la primera tienda
-          if (isAdmin && storeController.stores.isEmpty) {
-            _showFirstStoreDialog();
+          // ⭐ IMPORTANTE: Limpiar completamente el estado de tienda antes de cargar las nuevas
+          storeController.clearStores();
+          
+          // ⭐ CARGAR TIENDAS SIN AUTO-SELECCIÓN (autoSelect: false)
+          // Esto evita que se seleccione una tienda incorrecta del caché antes de nuestra selección manual
+          await storeController.loadStores(autoSelect: false);
+          
+          // ⭐ Obtener datos del usuario
+          final userData = result['data']['user'];
+          final userRole = userData['role'] as String?;
+          final userStores = userData['stores'] as List<dynamic>?;
+          
+          if (userRole == 'admin') {
+            // ⭐ ADMIN: Seleccionar la primera tienda del sistema (del backend)
+            if (storeController.stores.isNotEmpty) {
+              storeController.selectStore(storeController.stores.first);
+              
+              if (kDebugMode) {
+                print('✅ AuthController: Admin - Primera tienda del sistema seleccionada: ${storeController.stores.first['name']}');
+              }
+            } else {
+              // Si no hay tiendas, mostrar modal para crear la primera
+              _showFirstStoreDialog();
+            }
+          } else {
+            // ⭐ EMPLEADO: Seleccionar su tienda asignada
+            if (userStores != null && userStores.isNotEmpty) {
+              final firstStore = userStores[0] as Map<String, dynamic>;
+              storeController.selectStore(firstStore);
+              
+              if (kDebugMode) {
+                print('✅ AuthController: Empleado - Tienda asignada seleccionada: ${firstStore['name']}');
+              }
+            } else {
+              if (kDebugMode) {
+                print('⚠️ AuthController: Empleado sin tiendas asignadas');
+              }
+            }
           }
         } catch (e) {
           debugPrint('Error cargando tiendas después del login: $e');

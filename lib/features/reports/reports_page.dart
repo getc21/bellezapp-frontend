@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/controllers/order_controller.dart';
+import '../../shared/services/pdf_export_service.dart';
 import 'advanced_reports_page.dart';
 
 class ReportsPage extends StatefulWidget {
@@ -19,16 +21,24 @@ class _ReportsPageState extends State<ReportsPage> {
   String _selectedPeriod = 'Mes Actual';
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _isDatePickerOpen = false;
   final OrderController _orderController = Get.find<OrderController>();
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _setDateRangeFromPeriod();
     // Cargar órdenes si no están cargadas
-    if (_orderController.orders.isEmpty) {
-      _orderController.loadOrders();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        // Solo cargar si no hay datos
+        if (_orderController.orders.isEmpty) {
+          _orderController.loadOrders();
+        }
+      }
+    });
   }
 
   void _setDateRangeFromPeriod() {
@@ -81,26 +91,53 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _selectDate(bool isStartDate) async {
+    final now = DateTime.now();
+    // Capturar el FocusScope antes del await
+    final focusScope = FocusScope.of(context);
+    
+    // Marcar que el date picker está abierto para desactivar touch en chart
+    setState(() {
+      _isDatePickerOpen = true;
+    });
+    
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: isStartDate 
-          ? (_startDate ?? DateTime.now()) 
-          : (_endDate ?? DateTime.now()),
+          ? (_startDate ?? now) 
+          : (_endDate != null && _endDate!.isBefore(now) ? _endDate : now),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: isStartDate ? now : DateTime(2100), // Permitir fechas futuras para endDate
       locale: const Locale('es', 'ES'),
+      confirmText: 'Seleccionar', // Cambiar texto del botón
     );
     
-    if (picked != null) {
+    // Marcar que el date picker se cerró
+    if (mounted) {
       setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-          _selectedPeriod = 'Personalizado';
-        } else {
-          _endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
-          _selectedPeriod = 'Personalizado';
+        _isDatePickerOpen = false;
+      });
+    }
+    
+    if (mounted && picked != null) {
+      // Use Future.microtask to avoid state updates during frame rendering
+      Future.microtask(() {
+        if (mounted) {
+          setState(() {
+            if (isStartDate) {
+              _startDate = picked;
+              _selectedPeriod = 'Personalizado';
+            } else {
+              _endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+              _selectedPeriod = 'Personalizado';
+            }
+          });
         }
       });
+      
+      // Remover el foco de cualquier widget DESPUÉS del setState
+      if (mounted) {
+        focusScope.unfocus();
+      }
     }
   }
 
@@ -129,7 +166,7 @@ class _ReportsPageState extends State<ReportsPage> {
     }
   }
 
-  List<BarChartGroupData> _getChartData() {
+  List<FlSpot> _getChartData() {
     final filteredOrders = _getFilteredOrders();
     
     switch (_selectedPeriod) {
@@ -156,7 +193,9 @@ class _ReportsPageState extends State<ReportsPage> {
     }
   }
 
-  List<BarChartGroupData> _getHourlyData(List<Map<String, dynamic>> orders) {
+
+
+  List<FlSpot> _getHourlyData(List<Map<String, dynamic>> orders) {
     final hourlyData = List<double>.filled(24, 0.0);
     
     for (final order in orders) {
@@ -172,10 +211,10 @@ class _ReportsPageState extends State<ReportsPage> {
       }
     }
     
-    return List.generate(24, (index) => _buildBarGroup(index, hourlyData[index]));
+    return List.generate(24, (index) => FlSpot(index.toDouble(), hourlyData[index]));
   }
 
-  List<BarChartGroupData> _getDailyData(List<Map<String, dynamic>> orders) {
+  List<FlSpot> _getDailyData(List<Map<String, dynamic>> orders) {
     final dailyData = <int, double>{};
     
     for (final order in orders) {
@@ -191,10 +230,10 @@ class _ReportsPageState extends State<ReportsPage> {
       }
     }
     
-    return List.generate(7, (index) => _buildBarGroup(index, dailyData[index] ?? 0.0));
+    return List.generate(7, (index) => FlSpot(index.toDouble(), dailyData[index] ?? 0.0));
   }
 
-  List<BarChartGroupData> _getWeeklyData(List<Map<String, dynamic>> orders) {
+  List<FlSpot> _getWeeklyData(List<Map<String, dynamic>> orders) {
     final weeklyData = <int, double>{};
     
     for (final order in orders) {
@@ -210,10 +249,10 @@ class _ReportsPageState extends State<ReportsPage> {
       }
     }
     
-    return List.generate(5, (index) => _buildBarGroup(index, weeklyData[index] ?? 0.0));
+    return List.generate(5, (index) => FlSpot(index.toDouble(), weeklyData[index] ?? 0.0));
   }
 
-  List<BarChartGroupData> _getMonthlyData(List<Map<String, dynamic>> orders) {
+  List<FlSpot> _getMonthlyData(List<Map<String, dynamic>> orders) {
     final monthlyData = <int, double>{};
     
     for (final order in orders) {
@@ -229,10 +268,13 @@ class _ReportsPageState extends State<ReportsPage> {
       }
     }
     
-    return List.generate(12, (index) => _buildBarGroup(index, monthlyData[index] ?? 0.0));
+    return List.generate(12, (index) => FlSpot(index.toDouble(), monthlyData[index] ?? 0.0));
   }
 
-  String _getBottomTitle(int index) {
+  String _getBottomTitle(int index, int baseGroupCount) {
+    if (index < 0 || index >= baseGroupCount) {
+      return '';
+    }
     switch (_selectedPeriod) {
       case 'Hoy':
         return '${index}h';
@@ -392,12 +434,11 @@ class _ReportsPageState extends State<ReportsPage> {
     }).toList();
   }
 
-  double _getMaxY() {
-    final chartData = _getChartData();
+  double _getMaxY(List<FlSpot> chartData) {
     if (chartData.isEmpty) return 1000;
     
     final maxValue = chartData
-        .map((group) => group.barRods.first.toY)
+        .map((spot) => spot.y)
         .reduce((a, b) => a > b ? a : b);
     
     // Redondear hacia arriba al siguiente múltiplo de 1000
@@ -452,10 +493,15 @@ class _ReportsPageState extends State<ReportsPage> {
                         ))
                     .toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedPeriod = value!;
-                    if (value != 'Personalizado') {
-                      _setDateRangeFromPeriod();
+                  // Use Future.microtask to avoid state updates during frame rendering
+                  Future.microtask(() {
+                    if (mounted) {
+                      setState(() {
+                        _selectedPeriod = value!;
+                        if (value != 'Personalizado') {
+                          _setDateRangeFromPeriod();
+                        }
+                      });
                     }
                   });
                 },
@@ -488,7 +534,7 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               const Spacer(),
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () => _exportToPdf(),
                 icon: const Icon(Icons.file_download),
                 label: const Text('Exportar PDF'),
               ),
@@ -519,9 +565,12 @@ class _ReportsPageState extends State<ReportsPage> {
             final cashOrders = filteredOrders
                 .where((o) => o['paymentMethod'] == 'efectivo')
                 .length;
+            final transferOrders = filteredOrders
+                .where((o) => o['paymentMethod'] == 'transferencia')
+                .length;
 
             return GridView.count(
-              crossAxisCount: 4,
+              crossAxisCount: 5,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: AppSizes.spacing16,
@@ -532,6 +581,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 _buildMetricCard('Total Órdenes', '$totalOrders', '', Icons.receipt_long, AppColors.info),
                 _buildMetricCard('Ticket Promedio', '\$${avgTicket.toStringAsFixed(2)}', '', Icons.attach_money, AppColors.success),
                 _buildMetricCard('Pagos en Efectivo', '$cashOrders', '', Icons.money, AppColors.warning),
+                _buildMetricCard('Pagos por Transferencia', '$transferOrders', '', Icons.account_balance, AppColors.error),
               ],
             );
           }),
@@ -543,8 +593,8 @@ class _ReportsPageState extends State<ReportsPage> {
             final _ = _orderController.orders.length;
             
             final chartTitle = _getChartTitle();
-            final chartData = _getChartData();
-            final maxY = _getMaxY();
+            final baseChartData = _getChartData();
+            final maxY = _getMaxY(baseChartData);
             
             return Card(
               child: Padding(
@@ -563,28 +613,37 @@ class _ReportsPageState extends State<ReportsPage> {
                     const SizedBox(height: AppSizes.spacing24),
                     SizedBox(
                       height: 300,
-                      child: chartData.isEmpty
+                      child: baseChartData.isEmpty
                           ? const Center(
                               child: Text(
                                 'No hay datos para mostrar en este período',
                                 style: TextStyle(color: AppColors.textSecondary),
                               ),
                             )
-                          : BarChart(
-                              BarChartData(
-                                alignment: BarChartAlignment.spaceAround,
+                          : LineChart(
+                              LineChartData(
                                 maxY: maxY > 0 ? maxY : 1000,
-                                barTouchData: BarTouchData(
-                                  enabled: true,
-                                  touchTooltipData: BarTouchTooltipData(
-                                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                      return BarTooltipItem(
-                                        '\$${rod.toY.toStringAsFixed(2)}',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      );
+                                minY: 0,
+                                lineTouchData: LineTouchData(
+                                  enabled: !_isDatePickerOpen,
+                                  touchCallback: (event, response) {
+                                    // Prevent state updates during touch events that might interfere with rendering
+                                  },
+                                  touchTooltipData: LineTouchTooltipData(
+                                    getTooltipItems: (touchedSpots) {
+                                      try {
+                                        return touchedSpots.map((spot) {
+                                          return LineTooltipItem(
+                                            '\$${spot.y.toStringAsFixed(2)}',
+                                            const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          );
+                                        }).toList();
+                                      } catch (e) {
+                                        return [];
+                                      }
                                     },
                                   ),
                                 ),
@@ -597,7 +656,7 @@ class _ReportsPageState extends State<ReportsPage> {
                                         return Padding(
                                           padding: const EdgeInsets.only(top: 8),
                                           child: Text(
-                                            _getBottomTitle(value.toInt()),
+                                            _getBottomTitle(value.toInt(), baseChartData.length),
                                             style: const TextStyle(
                                               fontSize: 12,
                                               color: AppColors.textSecondary,
@@ -642,7 +701,20 @@ class _ReportsPageState extends State<ReportsPage> {
                                   },
                                 ),
                                 borderData: FlBorderData(show: false),
-                                barGroups: chartData,
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: baseChartData,
+                                    isCurved: true,
+                                    color: AppColors.primary,
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: const FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: AppColors.primary.withOpacity(0.2),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                     ),
@@ -865,20 +937,6 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  BarChartGroupData _buildBarGroup(int x, double value) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: value,
-          color: AppColors.primary,
-          width: 32,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-        ),
-      ],
-    );
-  }
-
   Widget _buildLegend(String label, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing4),
@@ -939,5 +997,108 @@ class _ReportsPageState extends State<ReportsPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportToPdf() async {
+    try {
+      Get.snackbar(
+        'Generando',
+        'Preparando reporte en PDF...',
+        duration: const Duration(seconds: 2),
+      );
+
+      final filteredOrders = _getFilteredOrders();
+      final totalSales = filteredOrders.fold<double>(
+        0.0,
+        (sum, order) => sum + (order['totalOrden'] as num? ?? 0).toDouble(),
+      );
+      final totalOrders = filteredOrders.length;
+      final avgTicket = totalOrders > 0 ? totalSales / totalOrders : 0.0;
+      final cashOrders = filteredOrders
+          .where((o) => o['paymentMethod'] == 'efectivo')
+          .length;
+
+      // Obtener productos top
+      final productSales = <String, Map<String, dynamic>>{};
+      for (final order in filteredOrders) {
+        final items = order['items'] as List? ?? [];
+        for (final item in items) {
+          final productData = item['productId'];
+          if (productData is Map) {
+            final productId = productData['_id']?.toString() ?? '';
+            final productName = productData['name']?.toString() ?? 'Sin nombre';
+            final quantity = item['quantity'] as num? ?? 0;
+            final price = item['price'] as num? ?? 0;
+            final totalSale = quantity * price;
+
+            if (productSales.containsKey(productId)) {
+              productSales[productId]!['totalSales'] += totalSale;
+              productSales[productId]!['quantity'] += quantity;
+            } else {
+              productSales[productId] = {
+                'name': productName,
+                'totalSales': totalSale.toDouble(),
+                'quantity': quantity.toInt(),
+              };
+            }
+          }
+        }
+      }
+
+      final sortedProducts = productSales.entries.toList()
+        ..sort((a, b) => b.value['totalSales'].compareTo(a.value['totalSales']));
+      final topProducts = sortedProducts.take(5).toList();
+
+      // Exportar PDF
+      final filePath = await PdfExportService.exportReportsToPdf(
+        title: 'Reporte de Ventas',
+        period: _selectedPeriod,
+        startDate: _startDate,
+        endDate: _endDate,
+        totalSales: totalSales,
+        totalOrders: totalOrders,
+        avgTicket: avgTicket,
+        cashOrders: cashOrders,
+        categorySales: _getCategorySales(),
+        topProducts: topProducts
+            .map((entry) => {
+                  'name': entry.value['name'],
+                  'totalSales': entry.value['totalSales'],
+                })
+            .toList(),
+      );
+
+      // Abrir PDF
+      await OpenFilex.open(filePath);
+
+      Get.snackbar(
+        'Éxito',
+        'Reporte PDF generado correctamente',
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      String errorMessage = 'Error al generar PDF';
+      
+      // Mensajes de error más amigables
+      final errorStr = e.toString().toLowerCase();
+      
+      if (errorStr.contains('path') || errorStr.contains('storage') || errorStr.contains('almacenamiento')) {
+        errorMessage = 'No se pudo acceder al almacenamiento. Verifica los permisos del dispositivo.';
+      } else if (errorStr.contains('socket') || errorStr.contains('connection')) {
+        errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
+      } else if (errorStr.contains('permission')) {
+        errorMessage = 'Permiso denegado. Habilita permisos de almacenamiento en configuración.';
+      }
+      
+      Get.snackbar(
+        'Error',
+        errorMessage,
+        duration: const Duration(seconds: 4),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

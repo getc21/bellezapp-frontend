@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
+import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/controllers/customer_controller.dart';
 
 class CustomersPage extends StatefulWidget {
@@ -17,11 +18,21 @@ class _CustomersPageState extends State<CustomersPage> {
   final _searchController = TextEditingController();
   final CustomerController _customerController = Get.find<CustomerController>();
   String _searchQuery = '';
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _customerController.loadCustomers();
+    // Cargar datos de forma no bloqueante
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        // Solo cargar si no hay datos
+        if (_customerController.customers.isEmpty) {
+          _customerController.loadCustomers();
+        }
+      }
+    });
   }
 
   @override
@@ -50,7 +61,7 @@ class _CustomersPageState extends State<CustomersPage> {
               ),
               const SizedBox(width: AppSizes.spacing16),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => _showCustomerDialog(),
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo Cliente'),
               ),
@@ -61,11 +72,13 @@ class _CustomersPageState extends State<CustomersPage> {
           // Customers Table
           Obx(() {
             if (_customerController.isLoading) {
-              return const Card(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppSizes.spacing24),
-                    child: CircularProgressIndicator(),
+              return SizedBox(
+                height: 600,
+                child: Card(
+                  child: Center(
+                    child: LoadingIndicator(
+                      message: 'Cargando clientes...',
+                    ),
                   ),
                 ),
               );
@@ -87,7 +100,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         ),
                         const SizedBox(height: AppSizes.spacing8),
                         ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () => _showCustomerDialog(),
                           icon: const Icon(Icons.add),
                           label: const Text('Agregar Primer Cliente'),
                         ),
@@ -231,7 +244,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () {},
+                  onPressed: () => _showCustomerDialog(customer: customer),
                   tooltip: 'Editar',
                 ),
                 IconButton(
@@ -245,6 +258,171 @@ class _CustomersPageState extends State<CustomersPage> {
         ],
       );
     }).toList();
+  }
+
+  void _showCustomerDialog({Map<String, dynamic>? customer}) {
+    final isEditing = customer != null;
+    final nameController = TextEditingController(text: customer?['name'] ?? '');
+    final emailController = TextEditingController(text: customer?['email'] ?? '');
+    final phoneController = TextEditingController(text: customer?['phone'] ?? '');
+    final addressController = TextEditingController(text: customer?['address'] ?? '');
+    final isLoading = false.obs;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isEditing ? 'Editar Cliente: ${customer['name']}' : 'Nuevo Cliente'),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre *',
+                    hintText: 'Ingrese el nombre completo',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: AppSizes.spacing16),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'ejemplo@correo.com',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: AppSizes.spacing16),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    hintText: 'Ingrese el teléfono',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: AppSizes.spacing16),
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dirección',
+                    hintText: 'Ingrese la dirección',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSizes.spacing8),
+                const Text(
+                  '* Campos requeridos',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              nameController.dispose();
+              emailController.dispose();
+              phoneController.dispose();
+              addressController.dispose();
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Cancelar'),
+          ),
+          Obx(() => ElevatedButton(
+            onPressed: isLoading.value
+                ? null
+                : () async {
+                    final name = nameController.text.trim();
+                    
+                    if (name.isEmpty) {
+                      Get.snackbar(
+                        'Error',
+                        'El nombre es requerido',
+                        backgroundColor: AppColors.error,
+                        colorText: AppColors.white,
+                      );
+                      return;
+                    }
+
+                    final email = emailController.text.trim();
+                    if (email.isNotEmpty && !email.contains('@')) {
+                      Get.snackbar(
+                        'Error',
+                        'Ingrese un email válido',
+                        backgroundColor: AppColors.error,
+                        colorText: AppColors.white,
+                      );
+                      return;
+                    }
+
+                    isLoading.value = true;
+
+                    try {
+                      bool success = false;
+                      
+                      if (isEditing) {
+                        success = await _customerController.updateCustomer(
+                          id: customer['_id'],
+                          name: name,
+                          email: email.isNotEmpty ? email : null,
+                          phone: phoneController.text.trim().isNotEmpty 
+                              ? phoneController.text.trim() 
+                              : null,
+                          address: addressController.text.trim().isNotEmpty 
+                              ? addressController.text.trim() 
+                              : null,
+                        );
+                      } else {
+                        success = await _customerController.createCustomer(
+                          name: name,
+                          email: email.isNotEmpty ? email : null,
+                          phone: phoneController.text.trim().isNotEmpty 
+                              ? phoneController.text.trim() 
+                              : null,
+                          address: addressController.text.trim().isNotEmpty 
+                              ? addressController.text.trim() 
+                              : null,
+                        );
+                      }
+                      
+                      if (success) {
+                        nameController.dispose();
+                        emailController.dispose();
+                        phoneController.dispose();
+                        addressController.dispose();
+                        
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      }
+                    } finally {
+                      isLoading.value = false;
+                    }
+                  },
+            child: isLoading.value
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(isEditing ? 'Actualizar' : 'Crear'),
+          )),
+        ],
+      ),
+    );
   }
 
   void _showCustomerDetails(Map<String, dynamic> customer) {

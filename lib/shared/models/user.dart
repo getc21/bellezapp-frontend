@@ -12,6 +12,7 @@ class User {
   final String? profileImageUrl;
   final String? phone;
   final Map<String, dynamic>? permissions;
+  final List<Map<String, dynamic>>? stores;
 
   User({
     this.id,
@@ -27,6 +28,7 @@ class User {
     this.profileImageUrl,
     this.phone,
     this.permissions,
+    this.stores,
   });
 
   // Getters de conveniencia
@@ -52,6 +54,7 @@ class User {
       'profileImageUrl': profileImageUrl,
       'phone': phone,
       'permissions': permissions,
+      'stores': stores,
     };
   }
 
@@ -78,6 +81,9 @@ class User {
       permissions: map['permissions'] is String 
           ? _jsonToMap(map['permissions'])
           : map['permissions'],
+      stores: map['stores'] != null 
+          ? List<Map<String, dynamic>>.from(map['stores'] as List)
+          : null,
     );
   }
 
@@ -112,6 +118,7 @@ class User {
     String? profileImageUrl,
     String? phone,
     Map<String, dynamic>? permissions,
+    List<Map<String, dynamic>>? stores,
   }) {
     return User(
       id: id ?? this.id,
@@ -127,6 +134,7 @@ class User {
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       phone: phone ?? this.phone,
       permissions: permissions ?? this.permissions,
+      stores: stores ?? this.stores,
     );
   }
 
