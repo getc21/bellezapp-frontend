@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http_parser/http_parser.dart';
 import '../config/api_config.dart';
 
 class SupplierProvider {
@@ -166,7 +165,7 @@ class SupplierProvider {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         try {
-          final data = json.decode(response.body);
+          json.decode(response.body);
           return {'success': true, 'message': 'Proveedor creado exitosamente'};
         } catch (e) {
           print('❌ Error parsing JSON response: $e');

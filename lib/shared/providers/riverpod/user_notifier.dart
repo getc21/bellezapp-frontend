@@ -195,6 +195,33 @@ class UserNotifier extends StateNotifier<UserState> {
     }
   }
 
+  Future<bool> assignStoreToUser(String userId, String storeId) async {
+    _initUserProvider();
+    state = state.copyWith(isLoading: true, errorMessage: '');
+
+    try {
+      final result = await _userProvider.assignStoreToUser(userId, storeId);
+
+      if (result['success']) {
+        await loadUsers();
+        state = state.copyWith(isLoading: false);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: result['message'] ?? 'Error asignando tienda',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Error de conexión: $e',
+      );
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(errorMessage: '');
   }

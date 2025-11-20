@@ -244,6 +244,40 @@ class ProductNotifier extends StateNotifier<ProductState> {
     }
   }
 
+  // Ajustar stock de producto
+  Future<bool> adjustStock({
+    required String productId,
+    required int adjustment,
+  }) async {
+    _initProductProvider();
+    state = state.copyWith(isLoading: true, errorMessage: '');
+
+    try {
+      final result = await _productProvider.adjustStock(
+        productId: productId,
+        adjustment: adjustment,
+      );
+
+      if (result['success']) {
+        await loadProductsForCurrentStore();
+        state = state.copyWith(isLoading: false);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: result['message'] ?? 'Error ajustando stock',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Error de conexión: $e',
+      );
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(errorMessage: '');
   }
