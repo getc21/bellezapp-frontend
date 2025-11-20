@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
-import '../../shared/controllers/reports_controller.dart';
+import '../../shared/providers/riverpod/reports_notifier.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 
-class AdvancedReportsPage extends StatefulWidget {
+class AdvancedReportsPage extends ConsumerStatefulWidget {
   const AdvancedReportsPage({super.key});
 
   @override
-  State<AdvancedReportsPage> createState() => _AdvancedReportsPageState();
+  ConsumerState<AdvancedReportsPage> createState() => _AdvancedReportsPageState();
 }
 
-class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
-  final ReportsController _reportsController = Get.find<ReportsController>();
-  
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _endDate = DateTime.now();
-  String _selectedPeriod = 'daily';
-  int _selectedTab = 0;
+class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late String _selectedPeriod;
+  late int _selectedTab;
 
   @override
   void initState() {
     super.initState();
+    _startDate = DateTime.now().subtract(const Duration(days: 30));
+    _endDate = DateTime.now();
+    _selectedPeriod = 'daily';
+    _selectedTab = 0;
     _loadReports();
   }
 
@@ -34,21 +36,20 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     final endDateStr = formatter.format(_endDate);
 
     // Cargar todos los reportes
-    _reportsController.loadInventoryRotationAnalysis(
+    ref.read(reportsProvider.notifier).loadInventoryRotationAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
       period: _selectedPeriod,
     );
     
-    _reportsController.loadProfitabilityAnalysis(
+    ref.read(reportsProvider.notifier).loadProfitabilityAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
     );
     
-    _reportsController.loadSalesTrendsAnalysis(
+    ref.read(reportsProvider.notifier).loadSalesTrendsAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
-      period: _selectedPeriod,
     );
 
     // Calcular período anterior para comparación
@@ -56,7 +57,7 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     final previousEnd = _startDate.subtract(const Duration(days: 1));
     final previousStart = previousEnd.subtract(duration);
     
-    _reportsController.loadPeriodsComparison(
+    ref.read(reportsProvider.notifier).loadPeriodsComparison(
       currentStartDate: startDateStr,
       currentEndDate: endDateStr,
       previousStartDate: formatter.format(previousStart),
@@ -131,6 +132,8 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final reportsState = ref.watch(reportsProvider);
+    
     return DashboardLayout(
       title: 'Reportes Avanzados',
       currentRoute: '/advanced-reports',
@@ -146,38 +149,37 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
           const SizedBox(height: AppSizes.spacing24),
           
           // Contenido según tab seleccionado
-          Obx(() {
-            if (_reportsController.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            if (_reportsController.errorMessage.isNotEmpty) {
-              return Center(
-                child: Text(
-                  'Error: ${_reportsController.errorMessage}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            }
-
-            switch (_selectedTab) {
-              case 0:
-                return _buildInventoryRotationTab();
-              case 1:
-                return _buildProfitabilityTab();
-              case 2:
-                return _buildSalesTrendsTab();
-              case 3:
-                return _buildPeriodsComparisonTab();
-              default:
-                return const SizedBox();
-            }
-          }),
+          if (reportsState.isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            )
+          else if (reportsState.errorMessage.isNotEmpty)
+            Center(
+              child: Text(
+                'Error: ${reportsState.errorMessage}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          else
+            _buildTabContent(reportsState),
         ],
       ),
     );
+  }
+
+  Widget _buildTabContent(ReportsState reportsState) {
+    switch (_selectedTab) {
+      case 0:
+        return _buildInventoryRotationTab(reportsState);
+      case 1:
+        return _buildProfitabilityTab(reportsState);
+      case 2:
+        return _buildSalesTrendsTab(reportsState);
+      case 3:
+        return _buildPeriodsComparisonTab(reportsState);
+      default:
+        return const SizedBox();
+    }
   }
 
   Widget _buildControls() {
@@ -330,8 +332,8 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     );
   }
 
-  Widget _buildInventoryRotationTab() {
-    final data = _reportsController.inventoryRotationData;
+  Widget _buildInventoryRotationTab(ReportsState reportsState) {
+    final data = reportsState.inventoryRotation;
     
     if (data.isEmpty) {
       return const Center(child: Text('No hay datos disponibles'));
@@ -482,8 +484,8 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     );
   }
 
-  Widget _buildProfitabilityTab() {
-    final data = _reportsController.profitabilityData;
+  Widget _buildProfitabilityTab(ReportsState reportsState) {
+    final data = reportsState.profitability;
     
     if (data.isEmpty) {
       return const Center(child: Text('No hay datos disponibles'));
@@ -611,8 +613,8 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     );
   }
 
-  Widget _buildSalesTrendsTab() {
-    final data = _reportsController.salesTrendsData;
+  Widget _buildSalesTrendsTab(ReportsState reportsState) {
+    final data = reportsState.salesTrends;
     
     if (data.isEmpty) {
       return const Center(child: Text('No hay datos disponibles'));
@@ -817,8 +819,8 @@ class _AdvancedReportsPageState extends State<AdvancedReportsPage> {
     );
   }
 
-  Widget _buildPeriodsComparisonTab() {
-    final data = _reportsController.periodsComparisonData;
+  Widget _buildPeriodsComparisonTab(ReportsState reportsState) {
+    final data = reportsState.periodsComparison;
     
     if (data.isEmpty) {
       return const Center(child: Text('No hay datos disponibles'));
