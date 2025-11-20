@@ -1,39 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:data_table_2/data_table_2.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/controllers/user_controller.dart';
-import '../../shared/controllers/store_controller.dart';
+import '../../shared/providers/riverpod/user_notifier.dart';
+import '../../shared/providers/riverpod/store_notifier.dart';
 import '../../shared/models/user.dart';
 
-class UsersPage extends StatefulWidget {
+class UsersPage extends ConsumerStatefulWidget {
   const UsersPage({super.key});
 
   @override
-  State<UsersPage> createState() => _UsersPageState();
+  ConsumerState<UsersPage> createState() => _UsersPageState();
 }
 
-class _UsersPageState extends State<UsersPage> {
-  late final UserController _userController;
-  late final StoreController _storeController;
+class _UsersPageState extends ConsumerState<UsersPage> {
   bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _userController = Get.find<UserController>();
-    _storeController = Get.find<StoreController>();
-    
-    // Forzar carga de usuarios al abrir la página
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasInitialized && mounted) {
         _hasInitialized = true;
-        // Solo cargar si no hay datos
-        if (_userController.users.isEmpty) {
-          _userController.loadUsers();
-        }
+        ref.read(userProvider.notifier).loadUsers();
       }
     });
   }
