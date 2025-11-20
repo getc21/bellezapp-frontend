@@ -264,152 +264,179 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final emailController = TextEditingController(text: user?.email ?? '');
     final passwordController = TextEditingController();
     var selectedRole = user?.role.name ?? 'employee';
+    final isLoading = ValueNotifier<bool>(false);
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(user == null ? 'Nuevo Usuario' : 'Editar Usuario'),
-          content: SizedBox(
-            width: 500,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: usernameController,
-                    enabled: user == null,
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      border: const OutlineInputBorder(),
-                      hintText: 'Ej: carlos',
-                      filled: user != null,
-                      fillColor: user != null ? Colors.grey[200] : null,
+        builder: (context, setState) => ValueListenableBuilder<bool>(
+          valueListenable: isLoading,
+          builder: (ctx, loading, _) => AlertDialog(
+            title: Text(user == null ? 'Nuevo Usuario' : 'Editar Usuario'),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: usernameController,
+                      enabled: user == null && !loading,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Ej: carlos',
+                        filled: user != null,
+                        fillColor: user != null ? Colors.grey[200] : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  TextField(
-                    controller: firstNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre',
-                      border: OutlineInputBorder(),
-                      hintText: 'Ej: Carlos',
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: firstNameController,
+                      enabled: !loading,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ej: Carlos',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  TextField(
-                    controller: lastNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Apellido',
-                      border: OutlineInputBorder(),
-                      hintText: 'Ej: Pérez',
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: lastNameController,
+                      enabled: !loading,
+                      decoration: const InputDecoration(
+                        labelText: 'Apellido',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ej: Pérez',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: emailController,
+                      enabled: !loading,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  TextField(
-                    controller: passwordController,
-                    decoration: InputDecoration(
-                      labelText: user == null ? 'Contraseña' : 'Nueva Contraseña (opcional)',
-                      border: const OutlineInputBorder(),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: passwordController,
+                      enabled: !loading,
+                      decoration: InputDecoration(
+                        labelText: user == null ? 'Contraseña' : 'Nueva Contraseña (opcional)',
+                        border: const OutlineInputBorder(),
+                      ),
+                      obscureText: true,
                     ),
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedRole,
-                    decoration: const InputDecoration(
-                      labelText: 'Rol',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: AppSizes.spacing16),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedRole,
+                      decoration: const InputDecoration(
+                        labelText: 'Rol',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'admin', child: Text('Administrador')),
+                        DropdownMenuItem(value: 'manager', child: Text('Gerente')),
+                        DropdownMenuItem(value: 'employee', child: Text('Empleado')),
+                      ],
+                      onChanged: loading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => selectedRole = value);
+                              }
+                            },
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'admin', child: Text('Administrador')),
-                      DropdownMenuItem(value: 'manager', child: Text('Gerente')),
-                      DropdownMenuItem(value: 'employee', child: Text('Empleado')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => selectedRole = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                ],
+                    const SizedBox(height: AppSizes.spacing16),
+                  ],
+                ),
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: loading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        final username = usernameController.text.trim();
+                        final firstName = firstNameController.text.trim();
+                        final lastName = lastNameController.text.trim();
+                        final email = emailController.text.trim();
+                        final password = passwordController.text.trim();
+
+                        if (username.isEmpty || firstName.isEmpty || email.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Username, nombre y email son requeridos')),
+                            );
+                          }
+                          return;
+                        }
+
+                        if (user == null && password.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('La contraseña es requerida para nuevos usuarios')),
+                            );
+                          }
+                          return;
+                        }
+
+                        isLoading.value = true;
+
+                        try {
+                          bool success;
+                          if (user == null) {
+                            success = await ref.read(userProvider.notifier).createUser(
+                              username: username,
+                              firstName: firstName,
+                              lastName: lastName,
+                              email: email,
+                              password: password,
+                              role: selectedRole,
+                            );
+                          } else {
+                            success = await ref.read(userProvider.notifier).updateUser(
+                              id: user.id ?? '',
+                              username: username,
+                              firstName: firstName,
+                              lastName: lastName,
+                              email: email,
+                              role: selectedRole,
+                              password: password.isEmpty ? null : password,
+                            );
+                          }
+
+                          if (success && context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        } finally {
+                          isLoading.value = false;
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(user == null ? 'Crear' : 'Actualizar'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final username = usernameController.text.trim();
-                final firstName = firstNameController.text.trim();
-                final lastName = lastNameController.text.trim();
-                final email = emailController.text.trim();
-                final password = passwordController.text.trim();
-
-                if (username.isEmpty || firstName.isEmpty || email.isEmpty) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Username, nombre y email son requeridos')),
-                    );
-                  }
-                  return;
-                }
-
-                if (user == null && password.isEmpty) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('La contraseña es requerida para nuevos usuarios')),
-                    );
-                  }
-                  return;
-                }
-
-                bool success;
-                if (user == null) {
-                  success = await ref.read(userProvider.notifier).createUser(
-                    username: username,
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    password: password,
-                    role: selectedRole,
-                  );
-                } else {
-                  success = await ref.read(userProvider.notifier).updateUser(
-                    id: user.id ?? '',
-                    username: username,
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    role: selectedRole,
-                    password: password.isEmpty ? null : password,
-                  );
-                }
-
-                if (success && context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: Text(user == null ? 'Crear' : 'Actualizar'),
-            ),
-          ],
         ),
       ),
     );
@@ -420,30 +447,53 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     String userId,
     String userName,
   ) {
+    final isLoading = ValueNotifier<bool>(false);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Usuario'),
-        content: Text('¿Está seguro de que desea eliminar al usuario "$userName"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final success = await ref.read(userProvider.notifier).deleteUser(userId);
-              if (success && context.mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+      builder: (context) => ValueListenableBuilder<bool>(
+        valueListenable: isLoading,
+        builder: (ctx, loading, _) => AlertDialog(
+          title: const Text('Eliminar Usuario'),
+          content: Text('¿Está seguro de que desea eliminar al usuario "$userName"?'),
+          actions: [
+            TextButton(
+              onPressed: loading ? null : () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
             ),
-            child: const Text('Eliminar'),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      isLoading.value = true;
+
+                      try {
+                        final success = await ref.read(userProvider.notifier).deleteUser(userId);
+
+                        if (success && context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      } finally {
+                        isLoading.value = false;
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Eliminar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -454,75 +504,98 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     StoreState storeState,
   ) {
     var selectedStoreId = '';
+    final isLoading = ValueNotifier<bool>(false);
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Asignar Tienda'),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Asignar tienda a: ${user.fullName}'),
-                const SizedBox(height: AppSizes.spacing16),
-                if (storeState.stores.isEmpty)
-                  const Text('No hay tiendas disponibles')
-                else
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Seleccionar Tienda',
-                      border: OutlineInputBorder(),
+        builder: (context, setState) => ValueListenableBuilder<bool>(
+          valueListenable: isLoading,
+          builder: (ctx, loading, _) => AlertDialog(
+            title: const Text('Asignar Tienda'),
+            content: SizedBox(
+              width: 400,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Asignar tienda a: ${user.fullName}'),
+                  const SizedBox(height: AppSizes.spacing16),
+                  if (storeState.stores.isEmpty)
+                    const Text('No hay tiendas disponibles')
+                  else
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Seleccionar Tienda',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: storeState.stores.map((store) {
+                        return DropdownMenuItem<String>(
+                          value: store['_id'],
+                          child: Text(store['name'] ?? 'Sin nombre'),
+                        );
+                      }).toList(),
+                      onChanged: loading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => selectedStoreId = value);
+                              }
+                            },
                     ),
-                    items: storeState.stores.map((store) {
-                      return DropdownMenuItem<String>(
-                        value: store['_id'],
-                        child: Text(store['name'] ?? 'Sin nombre'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => selectedStoreId = value);
-                      }
-                    },
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (selectedStoreId.isEmpty) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Debe seleccionar una tienda')),
-                    );
-                  }
-                  return;
-                }
-
-                final success = await ref.read(userProvider.notifier).assignStoreToUser(
-                  user.id ?? '',
-                  selectedStoreId,
-                );
-
-                if (success && context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                ],
               ),
-              child: const Text('Asignar'),
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: loading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        if (selectedStoreId.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Debe seleccionar una tienda')),
+                            );
+                          }
+                          return;
+                        }
+
+                        isLoading.value = true;
+
+                        try {
+                          final success = await ref.read(userProvider.notifier).assignStoreToUser(
+                            user.id ?? '',
+                            selectedStoreId,
+                          );
+
+                          if (success && context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        } finally {
+                          isLoading.value = false;
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Asignar'),
+              ),
+            ],
+          ),
         ),
       ),
     );

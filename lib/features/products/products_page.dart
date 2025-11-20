@@ -24,7 +24,7 @@ class ProductsPage extends ConsumerStatefulWidget {
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
   final _searchController = TextEditingController();
-  String _searchQuery = '''''' '';
+  String _searchQuery = '';
   bool _hasInitialized = false;
 
   @override
@@ -158,7 +158,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       minWidth: 1100,
                       columns: const [
                         DataColumn2(label: Text('Producto'), size: ColumnSize.L),
-                        DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
+                        DataColumn2(label: Text('CategorÃ­a'), size: ColumnSize.M),
                         DataColumn2(label: Text('Stock'), size: ColumnSize.S),
                         DataColumn2(label: Text('Precio Compra'), size: ColumnSize.S),
                         DataColumn2(label: Text('Precio Venta'), size: ColumnSize.S),
@@ -248,7 +248,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             ),
           ),
           DataCell(Text(
-            product['categoryId']?['name'] ?? 'Sin categoría',
+            product['categoryId']?['name'] ?? 'Sin categorÃ­a',
           )),
           DataCell(
             Container(
@@ -350,8 +350,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de eliminar "${product['name']}"?'),
+        title: const Text('Confirmar eliminaciÃ³n'),
+        content: Text('Â¿EstÃ¡s seguro de eliminar "${product['name']}"?'),
         actions: [
           TextButton(
             onPressed: () {
@@ -517,7 +517,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   TextField(
                     controller: descriptionController,
                     decoration: const InputDecoration(
-                      labelText: 'Descripción',
+                      labelText: 'DescripciÃ³n',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.description_outlined),
                     ),
@@ -528,7 +528,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   DropdownButtonFormField<String>(
                     value: selectedCategoryId,
                     decoration: const InputDecoration(
-                      labelText: 'Categoría *',
+                      labelText: 'CategorÃ­a *',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
@@ -566,7 +566,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   DropdownButtonFormField<String>(
                     value: selectedLocationId,
                     decoration: const InputDecoration(
-                      labelText: 'Ubicación *',
+                      labelText: 'UbicaciÃ³n *',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.location_on_outlined),
                     ),
@@ -692,7 +692,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   if (isEditing) ...[
                     const SizedBox(height: AppSizes.spacing8),
                     const Text(
-                      'Nota: El stock no se puede editar aquí. Use la función de ajuste de inventario.',
+                      'Nota: El stock no se puede editar aquÃ­. Use la funciÃ³n de ajuste de inventario.',
                       style: TextStyle(fontSize: 12, color: AppColors.warning),
                     ),
                   ],
@@ -719,7 +719,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 }
                 if (selectedCategoryId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Seleccione una categoría')),
+                    const SnackBar(content: Text('Seleccione una categorÃ­a')),
                   );
                   return;
                 }
@@ -731,7 +731,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 }
                 if (selectedLocationId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Seleccione una ubicación')),
+                    const SnackBar(content: Text('Seleccione una ubicaciÃ³n')),
                   );
                   return;
                 }
@@ -766,7 +766,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 
                 if (purchasePrice == null || salePrice == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Los precios deben ser números válidos')),
+                    const SnackBar(content: Text('Los precios deben ser nÃºmeros vÃ¡lidos')),
                   );
                   setState(() => isLoading = false);
                   return;
@@ -955,7 +955,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 
                 if (adjustment == null || adjustment <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ingresa una cantidad válida')),
+                    const SnackBar(content: Text('Ingresa una cantidad vÃ¡lida')),
                   );
                   return;
                 }

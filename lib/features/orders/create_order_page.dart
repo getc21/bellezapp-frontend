@@ -21,6 +21,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
   late ValueNotifier<Map<String, dynamic>?> _selectedCustomer;
   late ValueNotifier<String> _paymentMethod;
   late ValueNotifier<bool> _hasSearchText;
+  late ValueNotifier<bool> _isCreatingOrder;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -34,6 +35,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     _selectedCustomer = ValueNotifier<Map<String, dynamic>?>(null);
     _paymentMethod = ValueNotifier<String>('efectivo');
     _hasSearchText = ValueNotifier<bool>(false);
+    _isCreatingOrder = ValueNotifier<bool>(false);
     
     // Load initial data using Riverpod
     Future.microtask(() {
@@ -538,7 +540,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _clearCart,
+                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/orders', (_) => true),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -546,10 +548,26 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 Expanded(
                   child: ValueListenableBuilder<List<Map<String, dynamic>>>(
                     valueListenable: _cartItems,
-                    builder: (context, items, _) => ElevatedButton(
-                      onPressed: items.isEmpty ? null : _createOrder,
-                      child: const Text('Crear Orden'),
-                    ),
+                    builder: (context, items, _) {
+                      return ValueListenableBuilder<bool>(
+                        valueListenable: _isCreatingOrder,
+                        builder: (context, isCreating, _) {
+                          return ElevatedButton(
+                            onPressed: (items.isEmpty || isCreating) ? null : _createOrder,
+                            child: isCreating
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text('Crear Orden'),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -785,6 +803,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
       return;
     }
 
+    _isCreatingOrder.value = true;
+
     try {
       // Preparar los items de la orden
       final items = _cartItems.value.map((item) {
@@ -849,6 +869,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      _isCreatingOrder.value = false;
     }
   }
 }

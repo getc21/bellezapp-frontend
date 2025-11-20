@@ -7,15 +7,53 @@ import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/providers/riverpod/product_notifier.dart';
 import '../../shared/providers/riverpod/order_notifier.dart';
 import '../../shared/providers/riverpod/customer_notifier.dart';
+import '../../shared/providers/riverpod/store_notifier.dart' show storeProvider;
 
-class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Cargar datos cuando se monta la página
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Primero asegurar que la tienda actual esté cargada
+      await ref.read(storeProvider.notifier).loadStores(autoSelect: true);
+      
+      // Luego cargar los datos EN PARALELO (no secuencial)
+      if (mounted) {
+        Future.wait([
+          ref.read(orderProvider.notifier).loadOrdersForCurrentStore(),
+          ref.read(customerProvider.notifier).loadCustomersForCurrentStore(),
+          ref.read(productProvider.notifier).loadProductsForCurrentStore(),
+        ]);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final productState = ref.watch(productProvider);
     final orderState = ref.watch(orderProvider);
     final customerState = ref.watch(customerProvider);
+    
+    // Recargar datos cuando cambia la tienda actual
+    ref.listen(
+      storeProvider.select((state) => state.currentStore?['_id']),
+      (previous, next) {
+        if (previous != null && next != null && previous != next) {
+          // La tienda cambió, recargar datos
+          ref.read(orderProvider.notifier).loadOrdersForCurrentStore();
+          ref.read(customerProvider.notifier).loadCustomersForCurrentStore();
+          ref.read(productProvider.notifier).loadProductsForCurrentStore();
+        }
+      },
+    );
 
     return DashboardLayout(
       title: 'Dashboard',

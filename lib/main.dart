@@ -7,11 +7,13 @@ import 'features/auth/login_page.dart';
 import 'features/dashboard/dashboard_page.dart';
 import 'features/orders/orders_page.dart';
 import 'features/orders/create_order_page.dart';
+import 'features/products/products_page.dart';
 import 'features/reports/reports_page.dart';
 import 'features/categories/categories_page.dart';
 import 'features/locations/locations_page.dart';
 import 'features/users/users_page.dart';
 import 'features/suppliers/suppliers_page.dart';
+import 'features/customers/customers_page.dart';
 import 'shared/providers/riverpod/auth_notifier.dart';
 
 void main() async {
@@ -58,6 +60,8 @@ class BellezAppWeb extends ConsumerWidget {
         '/dashboard': (context) => const DashboardPage(),
         '/orders': (context) => const OrdersPage(),
         '/orders/create': (context) => const CreateOrderPage(),
+        '/products': (context) => const ProductsPage(),
+        '/customers': (context) => const CustomersPage(),
         '/reports': (context) => const ReportsPage(),
         '/categories': (context) => const CategoriesPage(),
         '/locations': (context) => const LocationsPage(),

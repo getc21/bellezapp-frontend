@@ -27,29 +27,36 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
     _endDate = DateTime.now();
     _selectedPeriod = 'daily';
     _selectedTab = 0;
-    _loadReports();
+    
+    // Cargar reportes después del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadReports();
+      }
+    });
   }
 
-  void _loadReports() {
+  Future<void> _loadReports() async {
     final DateFormat formatter = DateFormat('yyyy-MM-dd');
     final startDateStr = formatter.format(_startDate);
     final endDateStr = formatter.format(_endDate);
 
     // Cargar todos los reportes
-    ref.read(reportsProvider.notifier).loadInventoryRotationAnalysis(
+    await ref.read(reportsProvider.notifier).loadInventoryRotationAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
       period: _selectedPeriod,
     );
     
-    ref.read(reportsProvider.notifier).loadProfitabilityAnalysis(
+    await ref.read(reportsProvider.notifier).loadProfitabilityAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
     );
     
-    ref.read(reportsProvider.notifier).loadSalesTrendsAnalysis(
+    await ref.read(reportsProvider.notifier).loadSalesTrendsAnalysis(
       startDate: startDateStr,
       endDate: endDateStr,
+      period: _selectedPeriod,
     );
 
     // Calcular período anterior para comparación
@@ -57,7 +64,7 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
     final previousEnd = _startDate.subtract(const Duration(days: 1));
     final previousStart = previousEnd.subtract(duration);
     
-    ref.read(reportsProvider.notifier).loadPeriodsComparison(
+    await ref.read(reportsProvider.notifier).loadPeriodsComparison(
       currentStartDate: startDateStr,
       currentEndDate: endDateStr,
       previousStartDate: formatter.format(previousStart),
@@ -151,13 +158,40 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
           // Contenido según tab seleccionado
           if (reportsState.isLoading)
             const Center(
-              child: CircularProgressIndicator(),
+              child: Padding(
+                padding: EdgeInsets.all(AppSizes.spacing32),
+                child: CircularProgressIndicator(),
+              ),
             )
           else if (reportsState.errorMessage.isNotEmpty)
-            Center(
-              child: Text(
-                'Error: ${reportsState.errorMessage}',
-                style: const TextStyle(color: Colors.red),
+            Card(
+              color: Colors.red.withOpacity(0.1),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.spacing24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 48,
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    Text(
+                      reportsState.errorMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    ElevatedButton.icon(
+                      onPressed: _loadReports,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
               ),
             )
           else

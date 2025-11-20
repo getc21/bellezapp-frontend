@@ -64,7 +64,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       if (storeState.currentStore == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'No store selected',
+          errorMessage: 'Selecciona una tienda para ver los reportes',
         );
         return false;
       }
@@ -85,14 +85,14 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result['message'] ?? 'Error cargando análisis de rotación',
+          errorMessage: result['message'] ?? 'No hay datos de rotación para este período',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Error de conexión: $e',
+        errorMessage: 'Error de conexión. Verifica tu conexión a internet.',
       );
       return false;
     }
@@ -110,7 +110,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       if (storeState.currentStore == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'No store selected',
+          errorMessage: 'Selecciona una tienda para ver los reportes',
         );
         return false;
       }
@@ -130,14 +130,14 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result['message'] ?? 'Error cargando análisis de rentabilidad',
+          errorMessage: result['message'] ?? 'No hay datos de rentabilidad para este período',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Error de conexión: $e',
+        errorMessage: 'Error de conexión. Verifica tu conexión a internet.',
       );
       return false;
     }
@@ -146,6 +146,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
   Future<bool> loadSalesTrendsAnalysis({
     required String startDate,
     required String endDate,
+    String period = 'daily',
   }) async {
     _initReportsProvider();
     state = state.copyWith(isLoading: true, errorMessage: '');
@@ -155,7 +156,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       if (storeState.currentStore == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'No store selected',
+          errorMessage: 'Selecciona una tienda para ver los reportes',
         );
         return false;
       }
@@ -164,6 +165,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
         storeId: storeState.currentStore!['_id'],
         startDate: startDate,
         endDate: endDate,
+        period: period,
       );
 
       if (result['success']) {
@@ -175,14 +177,14 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result['message'] ?? 'Error cargando análisis de tendencias',
+          errorMessage: result['message'] ?? 'No hay datos de tendencias para este período',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Error de conexión: $e',
+        errorMessage: 'Error de conexión. Verifica tu conexión a internet.',
       );
       return false;
     }
@@ -202,7 +204,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       if (storeState.currentStore == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'No store selected',
+          errorMessage: 'Selecciona una tienda para ver los reportes',
         );
         return false;
       }
@@ -224,14 +226,14 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result['message'] ?? 'Error cargando comparación de períodos',
+          errorMessage: result['message'] ?? 'No hay datos de comparación para estos períodos',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Error de conexión: $e',
+        errorMessage: 'Error de conexión. Verifica tu conexión a internet.',
       );
       return false;
     }

@@ -34,6 +34,13 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
   Widget build(BuildContext context) {
     final locationState = ref.watch(locationProvider);
     final storeState = ref.watch(storeProvider);
+    
+    // Recargar ubicaciones cuando cambie la tienda
+    ref.listen(storeProvider, (previous, next) {
+      if (previous?.currentStore?['_id'] != next.currentStore?['_id']) {
+        ref.read(locationProvider.notifier).loadLocationsForCurrentStore();
+      }
+    });
 
     return DashboardLayout(
       title: 'Ubicaciones',

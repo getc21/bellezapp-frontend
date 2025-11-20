@@ -536,12 +536,6 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 icon: const Icon(Icons.file_download),
                 label: const Text('Exportar PDF'),
               ),
-              const SizedBox(width: AppSizes.spacing12),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.table_chart),
-                label: const Text('Exportar Excel'),
-              ),
             ],
           ),
           const SizedBox(height: AppSizes.spacing24),
