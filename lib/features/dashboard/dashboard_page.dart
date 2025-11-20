@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/controllers/product_controller.dart';
-import '../../shared/controllers/order_controller.dart';
-import '../../shared/controllers/customer_controller.dart';
+import '../../shared/providers/riverpod/product_notifier.dart';
+import '../../shared/providers/riverpod/order_notifier.dart';
+import '../../shared/providers/riverpod/customer_notifier.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final productController = Get.find<ProductController>();
-    final orderController = Get.find<OrderController>();
-    final customerController = Get.find<CustomerController>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final productState = ref.watch(productProvider);
+    final orderState = ref.watch(orderProvider);
+    final customerState = ref.watch(customerProvider);
 
     return DashboardLayout(
       title: 'Dashboard',
