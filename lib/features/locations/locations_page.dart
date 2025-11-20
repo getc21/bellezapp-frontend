@@ -1,46 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:data_table_2/data_table_2.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/widgets/loading_indicator.dart';
-import '../../shared/controllers/location_controller.dart';
-import '../../shared/controllers/store_controller.dart';
-import '../../shared/controllers/product_controller.dart';
+import '../../shared/providers/riverpod/location_notifier.dart';
+import '../../shared/providers/riverpod/store_notifier.dart';
+import '../../shared/providers/riverpod/product_notifier.dart';
 
-class LocationsPage extends StatefulWidget {
+class LocationsPage extends ConsumerStatefulWidget {
   const LocationsPage({super.key});
 
   @override
-  State<LocationsPage> createState() => _LocationsPageState();
+  ConsumerState<LocationsPage> createState() => _LocationsPageState();
 }
 
-class _LocationsPageState extends State<LocationsPage> {
-  late final LocationController _locationController;
-  final StoreController _storeController = Get.find<StoreController>();
-  final ProductController _productController = Get.find<ProductController>();
+class _LocationsPageState extends ConsumerState<LocationsPage> {
   bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _locationController = Get.find<LocationController>();
-    
-    // Cargar ubicaciones después de que el widget esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasInitialized && mounted) {
         _hasInitialized = true;
-        // Solo cargar si no hay datos
-        if (_locationController.locations.isEmpty) {
-          _locationController.loadLocationsForCurrentStore();
-        }
+        ref.read(locationProvider.notifier).loadLocationsForCurrentStore();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final locationState = ref.watch(locationProvider);
+    final storeState = ref.watch(storeProvider);
+    final productState = ref.watch(productProvider);
+
     return DashboardLayout(
       title: 'Ubicaciones',
       currentRoute: '/locations',
@@ -62,16 +57,13 @@ class _LocationsPageState extends State<LocationsPage> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Obx(() {
-                    final storeName = _storeController.currentStore?['name'] ?? 'Sin tienda';
-                    return Text(
-                      'Tienda: $storeName',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    );
-                  }),
+                  Text(
+                    'Tienda: ${storeState.currentStore?['name'] ?? 'Sin tienda'}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
               ElevatedButton.icon(
@@ -95,70 +87,64 @@ class _LocationsPageState extends State<LocationsPage> {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.spacing16),
-                child: Obx(() {
-                  if (_locationController.isLoading) {
-                    return LoadingIndicator(
-                      message: 'Cargando ubicaciones...',
-                    );
-                  }
-
-                  if (_locationController.locations.isEmpty) {
-                    return const Center(
-                      child: Text('No hay ubicaciones registradas para esta tienda'),
-                    );
-                  }
-
-                  return DataTable2(
-                    columnSpacing: 12,
-                    horizontalMargin: 12,
-                    minWidth: 600,
-                    columns: const [
-                      DataColumn2(
-                        label: Text('Nombre'),
-                        size: ColumnSize.L,
-                      ),
-                      DataColumn2(
-                        label: Text('Descripción'),
-                        size: ColumnSize.L,
-                      ),
-                      DataColumn2(
-                        label: Text('Acciones'),
-                        size: ColumnSize.S,
-                      ),
-                    ],
-                    rows: _locationController.locations.map((location) {
-                      final locationName = location['name'] ?? '';
-                      final locationDescription = location['description'] ?? '-';
-                      
-                      return DataRow2(
-                        onTap: () => _showLocationProducts(location),
-                        cells: [
-                          DataCell(Text(locationName)),
-                          DataCell(Text(locationDescription)),
-                          DataCell(
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18),
-                                  color: AppColors.textPrimary,
-                                  onPressed: () => _showLocationDialog(location: location),
-                                  tooltip: 'Editar',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18),
-                                  color: AppColors.textPrimary,
-                                  onPressed: () => _confirmDelete(location),
-                                  tooltip: 'Eliminar',
-                                ),
-                              ],
-                            ),
+                child: locationState.isLoading
+                    ? LoadingIndicator(
+                        message: 'Cargando ubicaciones...',
+                      )
+                    : locationState.locations.isEmpty
+                        ? const Center(
+                            child: Text('No hay ubicaciones registradas para esta tienda'),
+                          )
+                        : DataTable2(
+                            columnSpacing: 12,
+                            horizontalMargin: 12,
+                            minWidth: 600,
+                            columns: const [
+                              DataColumn2(
+                                label: Text('Nombre'),
+                                size: ColumnSize.L,
+                              ),
+                              DataColumn2(
+                                label: Text('Descripción'),
+                                size: ColumnSize.L,
+                              ),
+                              DataColumn2(
+                                label: Text('Acciones'),
+                                size: ColumnSize.S,
+                              ),
+                            ],
+                            rows: locationState.locations.map((location) {
+                              final locationName = location['name'] ?? '';
+                              final locationDescription = location['description'] ?? '-';
+                              
+                              return DataRow2(
+                                onTap: () => _showLocationProducts(location, productState.products),
+                                cells: [
+                                  DataCell(Text(locationName)),
+                                  DataCell(Text(locationDescription)),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, size: 18),
+                                          color: AppColors.textPrimary,
+                                          onPressed: () => _showLocationDialog(location: location),
+                                          tooltip: 'Editar',
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, size: 18),
+                                          color: AppColors.textPrimary,
+                                          onPressed: () => _confirmDelete(location),
+                                          tooltip: 'Eliminar',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  );
-                }),
               ),
             ),
           ),
@@ -171,6 +157,7 @@ class _LocationsPageState extends State<LocationsPage> {
     final nameController = TextEditingController(text: location?['name'] ?? '');
     final descriptionController = TextEditingController(text: location?['description'] ?? '');
     final isEditing = location != null;
+    final isLoading = ValueNotifier<bool>(false);
 
     showDialog(
       context: context,
@@ -207,38 +194,45 @@ class _LocationsPageState extends State<LocationsPage> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'El nombre es requerido',
-                  snackPosition: SnackPosition.TOP,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
+          ValueListenableBuilder<bool>(
+            valueListenable: isLoading,
+            builder: (context, loading, _) => ElevatedButton(
+              onPressed: loading ? null : () async {
+                if (nameController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('El nombre es requerido'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
 
-              bool success;
-              if (isEditing) {
-                success = await _locationController.updateLocation(
-                  id: location['_id'],
-                  name: nameController.text,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                );
-              } else {
-                success = await _locationController.createLocation(
-                  name: nameController.text,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                );
-              }
+                isLoading.value = true;
+                try {
+                  bool success;
+                  if (isEditing) {
+                    success = await ref.read(locationProvider.notifier).updateLocation(
+                      id: location['_id'],
+                      name: nameController.text,
+                      description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                    );
+                  } else {
+                    success = await ref.read(locationProvider.notifier).createLocation(
+                      name: nameController.text,
+                      description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                    );
+                  }
 
-              if (success && context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: Text(isEditing ? 'Actualizar' : 'Crear'),
+                  if (success && context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } finally {
+                  isLoading.value = false;
+                }
+              },
+              child: Text(isEditing ? 'Actualizar' : 'Crear'),
+            ),
           ),
         ],
       ),
@@ -248,14 +242,14 @@ class _LocationsPageState extends State<LocationsPage> {
   void _confirmDelete(Map<String, dynamic> location) {
     final locationName = location['name'] ?? 'esta ubicación';
     final locationId = location['_id'];
+    final isDeleting = ValueNotifier<bool>(false);
     
     if (locationId == null) {
-      Get.snackbar(
-        'Error',
-        'ID de ubicación no válido',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID de ubicación no válido'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -270,17 +264,25 @@ class _LocationsPageState extends State<LocationsPage> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final success = await _locationController.deleteLocation(locationId);
-              if (success && context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+          ValueListenableBuilder<bool>(
+            valueListenable: isDeleting,
+            builder: (context, deleting, _) => ElevatedButton(
+              onPressed: deleting ? null : () async {
+                isDeleting.value = true;
+                try {
+                  final success = await ref.read(locationProvider.notifier).deleteLocation(locationId);
+                  if (success && context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } finally {
+                  isDeleting.value = false;
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+              ),
+              child: const Text('Eliminar'),
             ),
-            child: const Text('Eliminar'),
           ),
         ],
       ),
@@ -288,11 +290,14 @@ class _LocationsPageState extends State<LocationsPage> {
   }
 
   void _showLocationProducts(Map<String, dynamic> location) {
+    // Get products from current Riverpod state
     final locationName = location['name'] ?? 'Ubicación';
     final locationId = location['_id'];
     
-    // Filtrar productos por ubicación
-    final locationProducts = _productController.products.where((product) {
+    // Access the product state that we read in build
+    final products = ref.read(productProvider).products;
+    
+    final locationProducts = products.where((product) {
       final productLocationId = product['locationId'] is Map 
           ? product['locationId']['_id'] 
           : product['locationId'];
