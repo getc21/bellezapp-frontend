@@ -1,19 +1,18 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:get/get.dart';
 
 class Utils {
-  static Color get colorBotones {
+  static Color colorBotonesForContext(BuildContext context) {
     try {
-      final context = Get.context;
-      if (context != null) {
-        return Theme.of(context).colorScheme.primary;
-      }
-      return const Color(0xFFEC407A);
+      return Theme.of(context).colorScheme.primary;
     } catch (e) {
       return const Color(0xFFEC407A);
     }
+  }
+  
+  static Color get colorBotones {
+    return const Color(0xFFEC407A);
   }
 
   static Color get yes => const Color(0xFF66BB6A);

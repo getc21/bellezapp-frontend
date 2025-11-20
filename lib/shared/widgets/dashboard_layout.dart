@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
-import '../controllers/store_controller.dart';
-import '../controllers/auth_controller.dart';
-import '../controllers/dashboard_collapse_controller.dart';
+import '../providers/riverpod/auth_notifier.dart';
+import '../providers/riverpod/store_notifier.dart';
 
-class DashboardLayout extends StatelessWidget {
+// Provider para el estado de colapso del sidebar
+final dashboardCollapseProvider = StateProvider<bool>((ref) => false);
+
+class DashboardLayout extends ConsumerWidget {
   final Widget child;
   final String title;
   final String currentRoute;
@@ -18,20 +20,22 @@ class DashboardLayout extends StatelessWidget {
     required this.currentRoute,
   });
 
-  void _confirmLogout(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cerrar sesión'),
         content: const Text('¿Estás seguro que deseas cerrar sesión?'),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () {
-              Get.back(); // Cerrar el diálogo
-              Get.offAllNamed('/login'); // Ir al login
+              Navigator.of(dialogContext).pop();
+              ref.read(authProvider.notifier).logout();
+              Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -45,24 +49,22 @@ class DashboardLayout extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDesktop = MediaQuery.of(context).size.width >= AppSizes.tabletBreakpoint;
-    
-    // Inicializar o obtener el controlador de collapse
-    final collapseController = Get.put(DashboardCollapseController());
-    
+    final isSidebarCollapsed = ref.watch(dashboardCollapseProvider);
+
     return Scaffold(
       body: Row(
         children: [
           // Sidebar
           if (isDesktop)
-            _buildSidebar(collapseController)
+            _buildSidebar(context, ref, isSidebarCollapsed)
           else
             NavigationRail(
               selectedIndex: _getSelectedIndex(),
-              onDestinationSelected: _onDestinationSelected,
+              onDestinationSelected: (index) => _onDestinationSelected(index),
               labelType: NavigationRailLabelType.all,
-              destinations: _getNavigationDestinations(),
+              destinations: _getNavigationDestinations(ref),
             ),
           
           // Main Content
@@ -70,7 +72,7 @@ class DashboardLayout extends StatelessWidget {
             child: Column(
               children: [
                 // Top Bar
-                _buildTopBar(),
+                _buildTopBar(context, ref),
                 
                 // Content Area
                 Expanded(
@@ -95,22 +97,24 @@ class DashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildSidebar(DashboardCollapseController collapseController) {
-    // Precalcular isAdmin FUERA del Obx para evitar reconstrucciones
-    final authController = Get.find<AuthController>();
-    final isAdmin = authController.currentUser?['role'] == 'admin';
+  Widget _buildSidebar(BuildContext context, WidgetRef ref, bool isSidebarCollapsed) {
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.currentUser?['role'] == 'admin';
     
-    // Widget AISLADO para el sidebar que SOLO depende del controlador de collapse
     return _SidebarWidget(
-      collapseController: collapseController,
       isAdmin: isAdmin,
       currentRoute: currentRoute,
+      isSidebarCollapsed: isSidebarCollapsed,
+      onToggle: () {
+        ref.read(dashboardCollapseProvider.notifier).state = !isSidebarCollapsed;
+      },
     );
   }
 
-  Widget _buildTopBar() {
-    final storeController = Get.find<StoreController>();
-    final authController = Get.find<AuthController>();
+  Widget _buildTopBar(BuildContext context, WidgetRef ref) {
+    final storeState = ref.watch(storeProvider);
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.currentUser?['role'] == 'admin';
     
     return Container(
       height: AppSizes.appBarHeight,
@@ -134,50 +138,8 @@ class DashboardLayout extends StatelessWidget {
           const SizedBox(width: AppSizes.spacing24),
           
           // ⭐ SELECTOR DE TIENDA - SOLO PARA ADMINISTRADORES
-          Obx(() {
-            // Verificar si el usuario es administrador
-            final isAdmin = authController.currentUser?['role'] == 'admin';
-            
-            // Si no es admin o no hay tiendas, no mostrar selector
-            if (!isAdmin || storeController.stores.isEmpty) {
-              // Para empleados, mostrar solo el nombre de la tienda asignada
-              if (!isAdmin && storeController.currentStore != null) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing12,
-                    vertical: AppSizes.spacing8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.store,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: AppSizes.spacing8),
-                      Text(
-                        storeController.currentStore?['name'] ?? 'Sin tienda',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }
-            
-            // Para administradores, mostrar dropdown selector
-            return Container(
+          if (isAdmin && storeState.stores.isNotEmpty)
+            Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.spacing12,
                 vertical: AppSizes.spacing4,
@@ -197,7 +159,7 @@ class DashboardLayout extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSizes.spacing8),
                   DropdownButton<String>(
-                    value: storeController.currentStore?['_id'],
+                    value: storeState.currentStore?['_id'],
                     underline: const SizedBox(),
                     isDense: true,
                     style: const TextStyle(
@@ -205,7 +167,7 @@ class DashboardLayout extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
-                    items: storeController.stores.map((store) {
+                    items: storeState.stores.map((store) {
                       return DropdownMenuItem<String>(
                         value: store['_id'],
                         child: Text(store['name'] ?? 'Sin nombre'),
@@ -213,75 +175,94 @@ class DashboardLayout extends StatelessWidget {
                     }).toList(),
                     onChanged: (storeId) {
                       if (storeId != null) {
-                        final store = storeController.stores.firstWhere(
+                        final store = storeState.stores.firstWhere(
                           (s) => s['_id'] == storeId,
                         );
-                        storeController.selectStore(store);
+                        ref.read(storeProvider.notifier).selectStore(store);
                       }
                     },
                   ),
                 ],
               ),
-            );
-          }),
+            )
+          else if (!isAdmin && storeState.currentStore != null)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.spacing12,
+                vertical: AppSizes.spacing8,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.store,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSizes.spacing8),
+                  Text(
+                    storeState.currentStore?['name'] ?? 'Sin tienda',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           
           const Spacer(),
           
           // ⭐ INFORMACIÓN DEL USUARIO Y CERRAR SESIÓN
-          Obx(() {
-            final authController = Get.find<AuthController>();
-            final userName = authController.userFullName;
-            final userInitials = authController.userInitials;
-            
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Nombre del usuario
-                Text(
-                  userName,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Nombre del usuario
+              Text(
+                authState.userFullName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing12),
+              
+              // Avatar con iniciales
+              CircleAvatar(
+                backgroundColor: AppColors.primary,
+                radius: 16,
+                child: Text(
+                  authState.userInitials,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(width: AppSizes.spacing12),
-                
-                // Avatar con iniciales
-                CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  radius: 16,
-                  child: Text(
-                    userInitials,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.spacing8),
-                
-                // Botón de cerrar sesión
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: () => _confirmLogout(context),
-                    tooltip: 'Cerrar sesión',
-                  ),
-                ),
-              ],
-            );
-          }),
+              ),
+              const SizedBox(width: AppSizes.spacing8),
+              
+              // Botón de cerrar sesión
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _confirmLogout(context, ref),
+                tooltip: 'Cerrar sesión',
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   int _getSelectedIndex() {
-    final authController = Get.find<AuthController>();
-    final isAdmin = authController.currentUser?['role'] == 'admin';
-    
     switch (currentRoute) {
       case '/dashboard':
         return 0;
@@ -298,19 +279,15 @@ class DashboardLayout extends StatelessWidget {
       case '/customers':
         return 6;
       case '/users':
-        return isAdmin ? 7 : -1; // Solo admin puede ver usuarios
+        return 7;
       case '/reports':
-        return isAdmin ? 8 : -1; // Solo admin puede ver reportes
+        return 8;
       default:
         return 0;
     }
   }
 
   void _onDestinationSelected(int index) {
-    final authController = Get.find<AuthController>();
-    final isAdmin = authController.currentUser?['role'] == 'admin';
-    
-    // Rutas base para todos los usuarios
     final List<String> routes = [
       '/dashboard',
       '/products',
@@ -319,21 +296,19 @@ class DashboardLayout extends StatelessWidget {
       '/locations',
       '/orders',
       '/customers',
+      '/users',
+      '/reports',
     ];
     
-    // Añadir rutas de admin si corresponde
-    if (isAdmin) {
-      routes.addAll(['/users', '/reports']);
-    }
-    
     if (index >= 0 && index < routes.length) {
-      Get.offNamed(routes[index]);
+      // Note: This will be handled by the page routing system
+      // The Navigator should be called from the pages themselves
     }
   }
 
-  List<NavigationRailDestination> _getNavigationDestinations() {
-    final authController = Get.find<AuthController>();
-    final isAdmin = authController.currentUser?['role'] == 'admin';
+  List<NavigationRailDestination> _getNavigationDestinations(WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.currentUser?['role'] == 'admin';
     
     final List<NavigationRailDestination> destinations = [
       const NavigationRailDestination(
@@ -366,7 +341,6 @@ class DashboardLayout extends StatelessWidget {
       ),
     ];
     
-    // ⭐ SOLO AÑADIR USUARIOS Y REPORTES PARA ADMINISTRADORES
     if (isAdmin) {
       destinations.addAll([
         const NavigationRailDestination(
@@ -386,28 +360,24 @@ class DashboardLayout extends StatelessWidget {
 
 // ============================================================================
 // WIDGET AISLADO PARA EL SIDEBAR
-// Este widget está COMPLETAMENTE aislado y SOLO observa al
-// DashboardCollapseController. Cualquier cambio en collapse NO afecta
-// a otros widgets del árbol.
 // ============================================================================
 
 class _SidebarWidget extends StatelessWidget {
-  final DashboardCollapseController collapseController;
   final bool isAdmin;
   final String currentRoute;
+  final bool isSidebarCollapsed;
+  final VoidCallback onToggle;
 
   const _SidebarWidget({
-    required this.collapseController,
     required this.isAdmin,
     required this.currentRoute,
+    required this.isSidebarCollapsed,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isSidebarCollapsed = collapseController.isSidebarCollapsed.value;
-
-      return AnimatedContainer(
+    return AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         width: isSidebarCollapsed
@@ -500,42 +470,49 @@ class _SidebarWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 0),
                   children: [
                     _buildNavItem(
+                      context: context,
                       icon: Icons.dashboard_outlined,
                       label: 'Dashboard',
                       route: '/dashboard',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.inventory_2_outlined,
                       label: 'Productos',
                       route: '/products',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.category_outlined,
                       label: 'Categorías',
                       route: '/categories',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.local_shipping_outlined,
                       label: 'Proveedores',
                       route: '/suppliers',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.location_on_outlined,
                       label: 'Ubicaciones',
                       route: '/locations',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.receipt_long_outlined,
                       label: 'Órdenes',
                       route: '/orders',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
                     _buildNavItem(
+                      context: context,
                       icon: Icons.people_outline,
                       label: 'Clientes',
                       route: '/customers',
@@ -544,12 +521,14 @@ class _SidebarWidget extends StatelessWidget {
                     // ⭐ SOLO MOSTRAR USUARIOS Y REPORTES PARA ADMINISTRADORES
                     if (isAdmin) ...[
                       _buildNavItem(
+                        context: context,
                         icon: Icons.person_outline,
                         label: 'Usuarios',
                         route: '/users',
                         isSidebarCollapsed: isSidebarCollapsed,
                       ),
                       _buildNavItem(
+                        context: context,
                         icon: Icons.analytics_outlined,
                         label: 'Reportes',
                         route: '/reports',
@@ -567,9 +546,7 @@ class _SidebarWidget extends StatelessWidget {
                   icon: Icon(isSidebarCollapsed
                       ? Icons.chevron_right
                       : Icons.chevron_left),
-                  onPressed: () {
-                    collapseController.toggleSidebar();
-                  },
+                  onPressed: onToggle,
                   tooltip: isSidebarCollapsed
                       ? 'Expandir menú'
                       : 'Colapsar menú',
@@ -579,10 +556,10 @@ class _SidebarWidget extends StatelessWidget {
           ),
         ),
       );
-    });
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String route,
@@ -601,7 +578,7 @@ class _SidebarWidget extends StatelessWidget {
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
         child: InkWell(
-          onTap: () => Get.offNamed(route),
+          onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(route, (_) => true),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
           child: Container(
             padding: EdgeInsets.symmetric(

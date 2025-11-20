@@ -231,7 +231,7 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
                     ? 'El período solo aplica a Tendencias de Ventas'
                     : 'Agrupa los datos por día, semana o mes',
                 child: DropdownButtonFormField<String>(
-                  value: _selectedPeriod,
+                  initialValue: _selectedPeriod,
                   decoration: InputDecoration(
                     labelText: 'Período',
                     border: const OutlineInputBorder(),

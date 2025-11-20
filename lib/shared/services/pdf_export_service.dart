@@ -216,7 +216,7 @@ class PdfExportService {
                       ),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           pw.SizedBox(height: 30),
@@ -286,7 +286,7 @@ class PdfExportService {
                       ),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           pw.SizedBox(height: 30),

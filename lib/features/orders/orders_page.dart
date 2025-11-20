@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -103,7 +102,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
               ),
               const Spacer(),
               ElevatedButton.icon(
-                onPressed: () => Get.toNamed('/orders/create'),
+                onPressed: () => Navigator.of(context).pushNamed('/orders/create'),
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Orden'),
               ),
@@ -277,8 +276,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     final customerName = customerData is Map ? (customerData['name'] ?? 'Sin nombre') : 'Sin cliente';
     final customerPhone = customerData is Map ? (customerData['phone'] ?? '') : '';
 
-    Get.dialog(
-      AlertDialog(
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
         title: Text('Orden #$shortId'),
         content: SizedBox(
           width: 500,
@@ -324,14 +324,14 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cerrar'),
           ),
         ],

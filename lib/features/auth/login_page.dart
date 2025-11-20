@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/providers/riverpod/auth_notifier.dart';
@@ -33,7 +32,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
       
       if (success && mounted) {
-        Get.offAllNamed('/dashboard');
+        Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (_) => false);
       }
     }
   }

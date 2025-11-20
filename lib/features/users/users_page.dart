@@ -325,7 +325,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                   ),
                   const SizedBox(height: AppSizes.spacing16),
                   DropdownButtonFormField<String>(
-                    value: selectedRole,
+                    initialValue: selectedRole,
                     decoration: const InputDecoration(
                       labelText: 'Rol',
                       border: OutlineInputBorder(),
