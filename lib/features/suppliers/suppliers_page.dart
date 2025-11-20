@@ -65,13 +65,13 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                       ),
                     ),
                     const SizedBox(height: AppSizes.spacing8),
-                    Obx(() => Text(
+                    Text(
                       '${supplierState.suppliers.length} proveedores registrados',
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
                       ),
-                    )),
+                    ),
                   ],
                 ),
                 ElevatedButton.icon(
@@ -90,65 +90,57 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
               ],
             ),
             const SizedBox(height: AppSizes.spacing24),
-
             // Data Table
-            Obx(() {
-              if (supplierState.isLoading) {
-                return SizedBox(
-                  height: 600,
-                  child: Card(
-                    child: Center(
-                      child: LoadingIndicator(
-                        message: 'Cargando proveedores...',
-                      ),
+            if (supplierState.isLoading)
+              SizedBox(
+                height: 600,
+                child: Card(
+                  child: Center(
+                    child: LoadingIndicator(
+                      message: 'Cargando proveedores...',
                     ),
                   ),
-                );
-              }
-
-              // Mostrar mensaje de error si existe
-              if (supplierState.errorMessage.isNotEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.spacing48),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                        const SizedBox(height: AppSizes.spacing16),
-                        Text(
-                          'Error: ${supplierState.errorMessage}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.error,
-                          ),
+                ),
+              )
+            else if (supplierState.errorMessage.isNotEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.spacing48),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                      const SizedBox(height: AppSizes.spacing16),
+                      Text(
+                        'Error: ${supplierState.errorMessage}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.error,
                         ),
-                        const SizedBox(height: AppSizes.spacing16),
-                        ElevatedButton(
-                          onPressed: () => ref.read(supplierProvider.notifier).loadSuppliers(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              if (supplierState.suppliers.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppSizes.spacing48),
-                    child: Text(
-                      'No hay proveedores registrados',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
                       ),
+                      const SizedBox(height: AppSizes.spacing16),
+                      ElevatedButton(
+                        onPressed: () => ref.read(supplierProvider.notifier).loadSuppliers(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (supplierState.suppliers.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSizes.spacing48),
+                  child: Text(
+                    'No hay proveedores registrados',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                );
-              }
-
-              return Container(
+                ),
+              )
+            else
+              Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
@@ -323,14 +315,13 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                     }).toList(),
                   ),
                 ),
-              );
-            }),
+              ),
           ],
         ),
       ),
-        );
-      },
-    );
+      );
+    },
+  );
   }
 
   void _showSupplierDialog(
@@ -385,50 +376,53 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Selector de imagen
-                Obx(() => GestureDetector(
-                  onTap: pickImage,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
-                        width: 2,
-                        style: BorderStyle.solid,
+                ValueListenableBuilder<String>(
+                  valueListenable: imagePreview,
+                  builder: (context, preview, _) => GestureDetector(
+                    onTap: pickImage,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                          width: 2,
+                          style: BorderStyle.solid,
+                        ),
                       ),
-                    ),
-                    child: imagePreview.value.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              imagePreview.value,
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                                    SizedBox(height: 8),
-                                    Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                                  ],
-                                );
-                              },
+                      child: imagePreview.value.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                imagePreview.value,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
+                                      SizedBox(height: 8),
+                                      Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                    ],
+                                  );
+                                },
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
+                                SizedBox(height: 8),
+                                Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                              ],
                             ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                              SizedBox(height: 8),
-                              Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
+                    ),
                   ),
-                )),
+                ),
                 const SizedBox(height: AppSizes.spacing24),
                 TextField(
                   controller: nameController,
@@ -512,26 +506,26 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
               bool success;
               if (supplier == null) {
                 print('🔵 Creating supplier: $name');
-                success = await supplierController.createSupplier(
-                  name,
-                  contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
-                  phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                  emailController.text.trim().isEmpty ? null : emailController.text.trim(),
-                  addressController.text.trim().isEmpty ? null : addressController.text.trim(),
-                  selectedImage.value,
-                  imageBytes.value,
+                success = await ref.read(supplierProvider.notifier).createSupplier(
+                  name: name,
+                  contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
+                  phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                  email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+                  address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+                  imageFile: selectedImage.value,
+                  imageBytes: imageBytes.value,
                 );
               } else {
                 print('🔵 Updating supplier: $name');
-                success = await supplierController.updateSupplier(
-                  supplier['_id'] ?? supplier['id'] ?? '',
-                  name,
-                  contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
-                  phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                  emailController.text.trim().isEmpty ? null : emailController.text.trim(),
-                  addressController.text.trim().isEmpty ? null : addressController.text.trim(),
-                  selectedImage.value,
-                  imageBytes.value,
+                success = await ref.read(supplierProvider.notifier).updateSupplier(
+                  id: supplier['_id'] ?? supplier['id'] ?? '',
+                  name: name,
+                  contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
+                  phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                  email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+                  address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+                  imageFile: selectedImage.value,
+                  imageBytes: imageBytes.value,
                 );
               }
 
