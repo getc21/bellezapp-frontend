@@ -162,8 +162,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }
   }
 
-  List<FlSpot> _getChartData() {
-    final filteredOrders = _getFilteredOrders();
+  List<FlSpot> _getChartData(OrderState orderState) {
+    final filteredOrders = _getFilteredOrders(orderState);
     
     switch (_selectedPeriod) {
       case 'Hoy':
@@ -334,8 +334,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     return 'Otros';
   }
 
-  Map<String, double> _getCategorySales() {
-    final filteredOrders = _getFilteredOrders();
+  Map<String, double> _getCategorySales(OrderState orderState) {
+    final filteredOrders = _getFilteredOrders(orderState);
     final categorySales = <String, double>{};
     
     for (final order in filteredOrders) {
@@ -364,8 +364,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     return categorySales;
   }
 
-  List<PieChartSectionData> _getCategoryChartData() {
-    final categorySales = _getCategorySales();
+  List<PieChartSectionData> _getCategoryChartData(OrderState orderState) {
+    final categorySales = _getCategorySales(orderState);
     
     if (categorySales.isEmpty) {
       return [];
@@ -404,8 +404,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }).toList();
   }
 
-  List<Widget> _getCategoryLegends() {
-    final categorySales = _getCategorySales();
+  List<Widget> _getCategoryLegends(OrderState orderState) {
+    final categorySales = _getCategorySales(orderState);
     
     final colors = [
       AppColors.primary,
@@ -547,180 +547,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           const SizedBox(height: AppSizes.spacing24),
           
           // Sales Summary Cards
-          Obx(() {
-            // Forzar observación de la lista de órdenes
-            final _ = _orderController.orders.length;
-            
-            final filteredOrders = _getFilteredOrders();
-            final totalSales = filteredOrders.fold<double>(
-              0.0, 
-              (sum, order) => sum + (order['totalOrden'] as num? ?? 0).toDouble()
-            );
-            final totalOrders = filteredOrders.length;
-            final avgTicket = totalOrders > 0 ? totalSales / totalOrders : 0.0;
-            
-            // Contar órdenes por método de pago (ya que no hay status)
-            final cashOrders = filteredOrders
-                .where((o) => o['paymentMethod'] == 'efectivo')
-                .length;
-            final transferOrders = filteredOrders
-                .where((o) => o['paymentMethod'] == 'transferencia')
-                .length;
-
-            return GridView.count(
-              crossAxisCount: 5,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: AppSizes.spacing16,
-              mainAxisSpacing: AppSizes.spacing16,
-              childAspectRatio: 1.5,
-              children: [
-                _buildMetricCard('Ventas Totales', '\$${totalSales.toStringAsFixed(2)}', '', Icons.trending_up, AppColors.primary),
-                _buildMetricCard('Total Órdenes', '$totalOrders', '', Icons.receipt_long, AppColors.info),
-                _buildMetricCard('Ticket Promedio', '\$${avgTicket.toStringAsFixed(2)}', '', Icons.attach_money, AppColors.success),
-                _buildMetricCard('Pagos en Efectivo', '$cashOrders', '', Icons.money, AppColors.warning),
-                _buildMetricCard('Pagos por Transferencia', '$transferOrders', '', Icons.account_balance, AppColors.error),
-              ],
-            );
-          }),
+          _buildSummaryCards(orderState),
           const SizedBox(height: AppSizes.spacing32),
           
           // Sales Chart
-          Obx(() {
-            // Forzar observación de la lista de órdenes
-            final _ = _orderController.orders.length;
-            
-            final chartTitle = _getChartTitle();
-            final baseChartData = _getChartData();
-            final maxY = _getMaxY(baseChartData);
-            
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSizes.spacing24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      chartTitle,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.spacing24),
-                    SizedBox(
-                      height: 300,
-                      child: baseChartData.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No hay datos para mostrar en este período',
-                                style: TextStyle(color: AppColors.textSecondary),
-                              ),
-                            )
-                          : LineChart(
-                              LineChartData(
-                                maxY: maxY > 0 ? maxY : 1000,
-                                minY: 0,
-                                lineTouchData: LineTouchData(
-                                  enabled: !_isDatePickerOpen,
-                                  touchCallback: (event, response) {
-                                    // Prevent state updates during touch events that might interfere with rendering
-                                  },
-                                  touchTooltipData: LineTouchTooltipData(
-                                    getTooltipItems: (touchedSpots) {
-                                      try {
-                                        return touchedSpots.map((spot) {
-                                          return LineTooltipItem(
-                                            '\$${spot.y.toStringAsFixed(2)}',
-                                            const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          );
-                                        }).toList();
-                                      } catch (e) {
-                                        return [];
-                                      }
-                                    },
-                                  ),
-                                ),
-                                titlesData: FlTitlesData(
-                                  show: true,
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 8),
-                                          child: Text(
-                                            _getBottomTitle(value.toInt(), baseChartData.length),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 50,
-                                      getTitlesWidget: (value, meta) {
-                                        if (value == 0) return const Text('');
-                                        return Text(
-                                          '\$${(value / 1000).toStringAsFixed(0)}k',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  topTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  rightTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                ),
-                                gridData: FlGridData(
-                                  show: true,
-                                  drawVerticalLine: false,
-                                  horizontalInterval: maxY > 0 ? maxY / 5 : 1000,
-                                  getDrawingHorizontalLine: (value) {
-                                    return const FlLine(
-                                      color: AppColors.border,
-                                      strokeWidth: 1,
-                                    );
-                                  },
-                                ),
-                                borderData: FlBorderData(show: false),
-                                lineBarsData: [
-                                  LineChartBarData(
-                                    spots: baseChartData,
-                                    isCurved: true,
-                                    color: AppColors.primary,
-                                    barWidth: 3,
-                                    isStrokeCapRound: true,
-                                    dotData: const FlDotData(show: true),
-                                    belowBarData: BarAreaData(
-                                      show: true,
-                                      color: AppColors.primary.withOpacity(0.2),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+          _buildSalesChart(orderState),
           const SizedBox(height: AppSizes.spacing24),
           
           // Category Distribution
@@ -728,149 +559,318 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.spacing24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Ventas por Categoría',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSizes.spacing24),
-                        Obx(() {
-                          final chartData = _getCategoryChartData();
-                          
-                          if (chartData.isEmpty) {
-                            return const SizedBox(
-                              height: 250,
-                              child: Center(
-                                child: Text(
-                                  'No hay datos de categorías en este período',
-                                  style: TextStyle(color: AppColors.textSecondary),
-                                ),
-                              ),
-                            );
-                          }
-                          
-                          return Column(
-                            children: [
-                              SizedBox(
-                                height: 250,
-                                child: PieChart(
-                                  PieChartData(
-                                    sections: chartData,
-                                    sectionsSpace: 2,
-                                    centerSpaceRadius: 0,
-                                    pieTouchData: PieTouchData(
-                                      touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                        // Opcional: agregar interactividad
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: AppSizes.spacing16),
-                              ..._getCategoryLegends(),
-                            ],
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
+                child: _buildCategoryChart(orderState),
               ),
               const SizedBox(width: AppSizes.spacing16),
               Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.spacing24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Top Productos',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSizes.spacing16),
-                        Obx(() {
-                          final filteredOrders = _getFilteredOrders();
-                          
-                          // Calcular productos más vendidos en el período
-                          final productSales = <String, Map<String, dynamic>>{};
-                          
-                          for (final order in filteredOrders) {
-                            final items = order['items'] as List? ?? [];
-                            for (final item in items) {
-                              final productData = item['productId'];
-                              if (productData is Map) {
-                                final productId = productData['_id']?.toString() ?? '';
-                                final productName = productData['name']?.toString() ?? 'Sin nombre';
-                                final quantity = item['quantity'] as num? ?? 0;
-                                final price = item['price'] as num? ?? 0;
-                                final totalSale = quantity * price;
-                                
-                                if (productSales.containsKey(productId)) {
-                                  productSales[productId]!['totalSales'] += totalSale;
-                                  productSales[productId]!['quantity'] += quantity;
-                                } else {
-                                  productSales[productId] = {
-                                    'name': productName,
-                                    'totalSales': totalSale.toDouble(),
-                                    'quantity': quantity.toInt(),
-                                  };
-                                }
-                              }
-                            }
-                          }
-                          
-                          // Ordenar por ventas totales
-                          final sortedProducts = productSales.entries.toList()
-                            ..sort((a, b) => b.value['totalSales'].compareTo(a.value['totalSales']));
-                          
-                          final topProducts = sortedProducts.take(5).toList();
-                          
-                          if (topProducts.isEmpty) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(AppSizes.spacing24),
-                                child: Text(
-                                  'No hay datos en este período',
-                                  style: TextStyle(color: AppColors.textSecondary),
-                                ),
-                              ),
-                            );
-                          }
-                          
-                          return Column(
-                            children: topProducts.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final product = entry.value.value;
-                              return _buildProductRow(
-                                product['name'],
-                                '\$${product['totalSales'].toStringAsFixed(2)}',
-                                index + 1,
-                              );
-                            }).toList(),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
+                child: _buildTopProductsChart(orderState),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCards(OrderState orderState) {
+    final filteredOrders = _getFilteredOrders(orderState);
+    final totalSales = filteredOrders.fold<double>(
+      0.0, 
+      (sum, order) => sum + (order['totalOrden'] as num? ?? 0).toDouble()
+    );
+    final totalOrders = filteredOrders.length;
+    final avgTicket = totalOrders > 0 ? totalSales / totalOrders : 0.0;
+    
+    // Contar órdenes por método de pago (ya que no hay status)
+    final cashOrders = filteredOrders
+        .where((o) => o['paymentMethod'] == 'efectivo')
+        .length;
+    final transferOrders = filteredOrders
+        .where((o) => o['paymentMethod'] == 'transferencia')
+        .length;
+
+    return GridView.count(
+      crossAxisCount: 5,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSizes.spacing16,
+      mainAxisSpacing: AppSizes.spacing16,
+      childAspectRatio: 1.5,
+      children: [
+        _buildMetricCard('Ventas Totales', '\$${totalSales.toStringAsFixed(2)}', '', Icons.trending_up, AppColors.primary),
+        _buildMetricCard('Total Órdenes', '$totalOrders', '', Icons.receipt_long, AppColors.info),
+        _buildMetricCard('Ticket Promedio', '\$${avgTicket.toStringAsFixed(2)}', '', Icons.attach_money, AppColors.success),
+        _buildMetricCard('Pagos en Efectivo', '$cashOrders', '', Icons.money, AppColors.warning),
+        _buildMetricCard('Pagos por Transferencia', '$transferOrders', '', Icons.account_balance, AppColors.error),
+      ],
+    );
+  }
+
+  Widget _buildSalesChart(OrderState orderState) {
+    final chartTitle = _getChartTitle();
+    final baseChartData = _getChartData(orderState);
+    final maxY = _getMaxY(baseChartData);
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              chartTitle,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacing24),
+            SizedBox(
+              height: 300,
+              child: baseChartData.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No hay datos para mostrar en este período',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : LineChart(
+                      LineChartData(
+                        maxY: maxY > 0 ? maxY : 1000,
+                        minY: 0,
+                        lineTouchData: LineTouchData(
+                          enabled: !_isDatePickerOpen,
+                          touchCallback: (event, response) {
+                            // Prevent state updates during touch events that might interfere with rendering
+                          },
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipItems: (touchedSpots) {
+                              try {
+                                return touchedSpots.map((spot) {
+                                  return LineTooltipItem(
+                                    '\$${spot.y.toStringAsFixed(2)}',
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                }).toList();
+                              } catch (e) {
+                                return [];
+                              }
+                            },
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    _getBottomTitle(value.toInt(), baseChartData.length),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 50,
+                              getTitlesWidget: (value, meta) {
+                                if (value == 0) return const Text('');
+                                return Text(
+                                  '\$${(value / 1000).toStringAsFixed(0)}k',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: maxY > 0 ? maxY / 5 : 1000,
+                          getDrawingHorizontalLine: (value) {
+                            return const FlLine(
+                              color: AppColors.border,
+                              strokeWidth: 1,
+                            );
+                          },
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: baseChartData,
+                            isCurved: true,
+                            color: AppColors.primary,
+                            barWidth: 3,
+                            isStrokeCapRound: true,
+                            dotData: const FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChart(OrderState orderState) {
+    final chartData = _getCategoryChartData(orderState);
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ventas por Categoría',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacing24),
+            if (chartData.isEmpty)
+              const SizedBox(
+                height: 250,
+                child: Center(
+                  child: Text(
+                    'No hay datos de categorías en este período',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  SizedBox(
+                    height: 250,
+                    child: PieChart(
+                      PieChartData(
+                        sections: chartData,
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 0,
+                        pieTouchData: PieTouchData(
+                          touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                            // Opcional: agregar interactividad
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacing16),
+                  ..._getCategoryLegends(orderState),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopProductsChart(OrderState orderState) {
+    final filteredOrders = _getFilteredOrders(orderState);
+    
+    // Calcular productos más vendidos en el período
+    final productSales = <String, Map<String, dynamic>>{};
+    
+    for (final order in filteredOrders) {
+      final items = order['items'] as List? ?? [];
+      for (final item in items) {
+        final productData = item['productId'];
+        if (productData is Map) {
+          final productId = productData['_id']?.toString() ?? '';
+          final productName = productData['name']?.toString() ?? 'Sin nombre';
+          final quantity = item['quantity'] as num? ?? 0;
+          final price = item['price'] as num? ?? 0;
+          final totalSale = quantity * price;
+          
+          if (productSales.containsKey(productId)) {
+            productSales[productId]!['totalSales'] += totalSale;
+            productSales[productId]!['quantity'] += quantity;
+          } else {
+            productSales[productId] = {
+              'name': productName,
+              'totalSales': totalSale.toDouble(),
+              'quantity': quantity.toInt(),
+            };
+          }
+        }
+      }
+    }
+    
+    // Ordenar por ventas totales
+    final sortedProducts = productSales.entries.toList()
+      ..sort((a, b) => b.value['totalSales'].compareTo(a.value['totalSales']));
+    
+    final topProducts = sortedProducts.take(5).toList();
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Top Productos',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacing16),
+            if (topProducts.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSizes.spacing24),
+                  child: Text(
+                    'No hay datos en este período',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: topProducts.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final product = entry.value.value;
+                  return _buildProductRow(
+                    product['name'],
+                    '\$${product['totalSales'].toStringAsFixed(2)}',
+                    index + 1,
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -894,7 +894,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                     vertical: AppSizes.spacing4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                   ),
                   child: Text(
@@ -964,7 +964,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: position <= 3 ? AppColors.warning.withOpacity(0.2) : AppColors.gray100,
+              color: position <= 3 ? AppColors.warning.withValues(alpha: 0.2) : AppColors.gray100,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -999,13 +999,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   Future<void> _exportToPdf() async {
     try {
-      Get.snackbar(
-        'Generando',
-        'Preparando reporte en PDF...',
-        duration: const Duration(seconds: 2),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preparando reporte en PDF...'),
+          duration: Duration(seconds: 2),
+        ),
       );
 
-      final filteredOrders = _getFilteredOrders();
+      final orderState = ref.read(orderProvider);
+      final filteredOrders = _getFilteredOrders(orderState);
       final totalSales = filteredOrders.fold<double>(
         0.0,
         (sum, order) => sum + (order['totalOrden'] as num? ?? 0).toDouble(),
@@ -1057,7 +1059,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         totalOrders: totalOrders,
         avgTicket: avgTicket,
         cashOrders: cashOrders,
-        categorySales: _getCategorySales(),
+        categorySales: _getCategorySales(orderState),
         topProducts: topProducts
             .map((entry) => {
                   'name': entry.value['name'],
@@ -1069,13 +1071,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       // Abrir PDF
       await OpenFilex.open(filePath);
 
-      Get.snackbar(
-        'Éxito',
-        'Reporte PDF generado correctamente',
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reporte PDF generado correctamente'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       String errorMessage = 'Error al generar PDF';
       
@@ -1090,13 +1094,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         errorMessage = 'Permiso denegado. Habilita permisos de almacenamiento en configuración.';
       }
       
-      Get.snackbar(
-        'Error',
-        errorMessage,
-        duration: const Duration(seconds: 4),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            duration: const Duration(seconds: 4),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
