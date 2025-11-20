@@ -79,7 +79,7 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                   icon: const Icon(Icons.add, size: 20),
                   label: const Text('Nuevo Proveedor'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.spacing24,
@@ -192,7 +192,7 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: supplier['foto'] != null && supplier['foto'].toString().isNotEmpty
@@ -204,17 +204,17 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                                             height: 40,
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) {
-                                              return const Icon(
+                                              return Icon(
                                                 Icons.store_outlined,
-                                                color: AppColors.primary,
+                                                color: Theme.of(context).primaryColor,
                                                 size: 24,
                                               );
                                             },
                                           ),
                                         )
-                                      : const Icon(
+                                      : Icon(
                                           Icons.store_outlined,
-                                          color: AppColors.primary,
+                                          color: Theme.of(context).primaryColor,
                                           size: 24,
                                         ),
                                 ),
@@ -384,10 +384,10 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: Theme.of(context).primaryColor.withOpacity(0.3),
                           width: 2,
                           style: BorderStyle.solid,
                         ),
@@ -403,9 +403,9 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                                 errorBuilder: (context, error, stackTrace) {
                                   return Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                                      SizedBox(height: 8),
+                                    children: [
+                                      Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                      const SizedBox(height: 8),
                                       Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
                                     ],
                                   );
@@ -414,9 +414,9 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                             )
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                                SizedBox(height: 8),
+                              children: [
+                                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                const SizedBox(height: 8),
                                 Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
                               ],
                             ),
@@ -541,7 +541,7 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
             ),
             child: isLoading.value
@@ -786,10 +786,10 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                                       const SizedBox(width: 16),
                                       Text(
                                         'Precio: \$${(product['salePrice'] as num).toStringAsFixed(2)}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.primary,
+                                          color: Theme.of(context).primaryColor,
                                         ),
                                       ),
                                     ],
@@ -806,7 +806,7 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
                                         product['categoryId']['name'] ?? 'Sin categoría',
                                         style: const TextStyle(fontSize: 11),
                                       ),
-                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                                       padding: EdgeInsets.zero,
                                     ),
                                 ],

@@ -374,7 +374,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     final total = categorySales.values.fold<double>(0.0, (sum, value) => sum + value);
     
     final colors = [
-      AppColors.primary,
+      Theme.of(context).primaryColor,
       AppColors.info,
       AppColors.success,
       AppColors.warning,
@@ -408,7 +408,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     final categorySales = _getCategorySales(orderState);
     
     final colors = [
-      AppColors.primary,
+      Theme.of(context).primaryColor,
       AppColors.info,
       AppColors.success,
       AppColors.warning,
@@ -469,6 +469,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 icon: const Icon(Icons.analytics),
                 label: const Text('Reportes Avanzados'),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSizes.spacing20,
                     vertical: AppSizes.spacing12,
@@ -591,7 +592,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       mainAxisSpacing: AppSizes.spacing16,
       childAspectRatio: 1.5,
       children: [
-        _buildMetricCard('Ventas Totales', '\$${totalSales.toStringAsFixed(2)}', '', Icons.trending_up, AppColors.primary),
+        _buildMetricCard('Ventas Totales', '\$${totalSales.toStringAsFixed(2)}', '', Icons.trending_up, Theme.of(context).primaryColor),
         _buildMetricCard('Total Órdenes', '$totalOrders', '', Icons.receipt_long, AppColors.info),
         _buildMetricCard('Ticket Promedio', '\$${avgTicket.toStringAsFixed(2)}', '', Icons.attach_money, AppColors.success),
         _buildMetricCard('Pagos en Efectivo', '$cashOrders', '', Icons.money, AppColors.warning),
@@ -714,13 +715,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                           LineChartBarData(
                             spots: baseChartData,
                             isCurved: true,
-                            color: AppColors.primary,
+                            color: Theme.of(context).primaryColor,
                             barWidth: 3,
                             isStrokeCapRound: true,
                             dotData: const FlDotData(show: true),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: AppColors.primary.withValues(alpha: 0.2),
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                             ),
                           ),
                         ],
@@ -981,9 +982,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           ),
           Text(
             sales,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: Theme.of(context).primaryColor,
             ),
           ),
         ],

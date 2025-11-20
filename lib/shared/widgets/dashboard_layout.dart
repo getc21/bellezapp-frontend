@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../providers/riverpod/auth_notifier.dart';
 import '../providers/riverpod/store_notifier.dart';
+import '../providers/riverpod/theme_notifier.dart';
 
 // Provider para el estado de colapso del sidebar
 final dashboardCollapseProvider = StateProvider<bool>((ref) => false);
@@ -38,7 +39,7 @@ class DashboardLayout extends ConsumerWidget {
               Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: AppColors.white,
             ),
             child: const Text('Cerrar sesión'),
@@ -77,7 +78,16 @@ class DashboardLayout extends ConsumerWidget {
                 // Content Area
                 Expanded(
                   child: Container(
-                    color: AppColors.background,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.background,
+                          Theme.of(context).primaryColor.withOpacity(0.03),
+                        ],
+                      ),
+                    ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(AppSizes.spacing24),
                       child: ConstrainedBox(
@@ -118,9 +128,16 @@ class DashboardLayout extends ConsumerWidget {
     
     return Container(
       height: AppSizes.appBarHeight,
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.white,
+            Theme.of(context).primaryColor.withOpacity(0.08),
+          ],
+        ),
+        border: const Border(
           bottom: BorderSide(color: AppColors.border),
         ),
       ),
@@ -145,17 +162,17 @@ class DashboardLayout extends ConsumerWidget {
                 vertical: AppSizes.spacing4,
               ),
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.store,
                     size: 16,
-                    color: AppColors.primary,
+                    color: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(width: AppSizes.spacing8),
                   DropdownButton<String>(
@@ -192,17 +209,17 @@ class DashboardLayout extends ConsumerWidget {
                 vertical: AppSizes.spacing8,
               ),
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.store,
                     size: 16,
-                    color: AppColors.primary,
+                    color: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(width: AppSizes.spacing8),
                   Text(
@@ -236,7 +253,7 @@ class DashboardLayout extends ConsumerWidget {
               
               // Avatar con iniciales
               CircleAvatar(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).primaryColor,
                 radius: 16,
                 child: Text(
                   authState.userInitials,
@@ -415,10 +432,10 @@ class _SidebarWidget extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
+                            gradient: LinearGradient(
                               colors: [
-                                AppColors.primary,
-                                AppColors.secondary
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).colorScheme.secondary
                               ],
                             ),
                             borderRadius: BorderRadius.circular(
@@ -437,10 +454,10 @@ class _SidebarWidget extends StatelessWidget {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   colors: [
-                                    AppColors.primary,
-                                    AppColors.secondary
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).colorScheme.secondary
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(
@@ -540,6 +557,53 @@ class _SidebarWidget extends StatelessWidget {
               ),
               // Bottom Actions
               const Divider(height: 1),
+              // Botón de Configurar Temas
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSidebarCollapsed ? AppSizes.spacing4 : AppSizes.spacing8,
+                  vertical: AppSizes.spacing4,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                  child: InkWell(
+                    onTap: () => Navigator.of(context).pushNamed('/settings/theme'),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSidebarCollapsed ? AppSizes.spacing4 : AppSizes.spacing16,
+                        vertical: AppSizes.spacing8,
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.palette_outlined,
+                              size: 20,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            if (!isSidebarCollapsed) ...[
+                              const SizedBox(width: AppSizes.spacing12),
+                              const Text(
+                                'Temas',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Botón de colapsar
               Padding(
                 padding: const EdgeInsets.all(AppSizes.spacing8),
                 child: IconButton(
@@ -574,7 +638,7 @@ class _SidebarWidget extends StatelessWidget {
       ),
       child: Material(
         color: isSelected
-            ? AppColors.primaryLight.withOpacity(0.1)
+            ? Theme.of(context).primaryColor.withOpacity(0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
         child: InkWell(
@@ -594,7 +658,7 @@ class _SidebarWidget extends StatelessWidget {
                   Icon(
                     icon,
                     color: isSelected
-                        ? AppColors.primary
+                        ? Theme.of(context).primaryColor
                         : AppColors.textSecondary,
                     size: AppSizes.iconMedium,
                   ),
@@ -606,7 +670,7 @@ class _SidebarWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isSelected
-                            ? AppColors.primary
+                            ? Theme.of(context).primaryColor
                             : AppColors.textPrimary,
                         fontWeight: isSelected
                             ? FontWeight.w600

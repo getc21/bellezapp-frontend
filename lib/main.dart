@@ -14,7 +14,9 @@ import 'features/locations/locations_page.dart';
 import 'features/users/users_page.dart';
 import 'features/suppliers/suppliers_page.dart';
 import 'features/customers/customers_page.dart';
+import 'features/settings/theme_settings_page.dart';
 import 'shared/providers/riverpod/auth_notifier.dart';
+import 'shared/providers/riverpod/theme_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,11 +33,30 @@ class BellezAppWeb extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final themeState = ref.watch(themeProvider);
+    
+    // Obtener el tema actual basado en los colores seleccionados
+    ThemeData currentTheme;
+    if (themeState.isInitialized) {
+      final currentThemeId = themeState.currentThemeId;
+      final notifier = ref.read(themeProvider.notifier);
+      final theme = notifier.availableThemes.firstWhere(
+        (t) => t.id == currentThemeId,
+        orElse: () => notifier.availableThemes.first,
+      );
+      currentTheme = AppTheme.createTheme(
+        primaryColor: theme.primaryColor,
+        secondaryColor: theme.accentColor,
+        brightness: themeState.themeMode == ThemeMode.dark ? Brightness.dark : Brightness.light,
+      );
+    } else {
+      currentTheme = AppTheme.lightTheme;
+    }
     
     return MaterialApp(
       title: 'BellezApp - Panel de Administración',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: currentTheme,
       locale: const Locale('es', 'ES'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -67,6 +88,7 @@ class BellezAppWeb extends ConsumerWidget {
         '/locations': (context) => const LocationsPage(),
         '/suppliers': (context) => const SuppliersPage(),
         '/users': (context) => const UsersPage(),
+        '/settings/theme': (context) => const ThemeSettingsPage(),
       },
     );
   }

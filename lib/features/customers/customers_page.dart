@@ -76,6 +76,9 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                   onPressed: () => _showCustomerDialog(),
                   icon: const Icon(Icons.add),
                   label: const Text('Nuevo Cliente'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                  ),
                 ),
               ],
             ),
@@ -105,6 +108,9 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                       onPressed: () => _showCustomerDialog(),
                       icon: const Icon(Icons.add),
                       label: const Text('Agregar Primer Cliente'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ],
                 ),
@@ -157,12 +163,12 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: AppColors.primary.withOpacity(0.2),
+                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
                       child: Text(
                         fullName.isNotEmpty ? fullName[0].toUpperCase() : 'C',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),
@@ -420,6 +426,9 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                         isLoading.value = false;
                       }
                     },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).primaryColor,
+              ),
               child: loading
                   ? const SizedBox(
                       width: 20,
@@ -501,8 +510,8 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).primaryColor.withOpacity(0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -724,7 +733,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppColors.primary),
+        Icon(icon, size: 20, color: Theme.of(context).primaryColor),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

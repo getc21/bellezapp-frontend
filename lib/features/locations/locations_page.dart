@@ -77,6 +77,7 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Ubicación'),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSizes.spacing20,
                     vertical: AppSizes.spacing12,
@@ -237,6 +238,9 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
                   isLoading.value = false;
                 }
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+              ),
               child: Text(isEditing ? 'Actualizar' : 'Crear'),
             ),
           ),
@@ -469,10 +473,10 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
                                       const SizedBox(width: 16),
                                       Text(
                                         'Precio: \$${(product['salePrice'] as num).toStringAsFixed(2)}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.primary,
+                                          color: Theme.of(context).primaryColor,
                                         ),
                                       ),
                                     ],
@@ -489,7 +493,7 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
                                         product['categoryId']['name'] ?? 'Sin categoría',
                                         style: const TextStyle(fontSize: 11),
                                       ),
-                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                                       padding: EdgeInsets.zero,
                                     ),
                                 ],

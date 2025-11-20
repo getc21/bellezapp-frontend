@@ -105,6 +105,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 onPressed: () => Navigator.of(context).pushNamed('/orders/create'),
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Orden'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                ),
               ),
             ],
           ),
@@ -214,7 +217,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
         cells: [
           DataCell(Text(
             '#$shortId',
-            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
+            style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).primaryColor),
           )),
           DataCell(
             Row(
@@ -369,7 +372,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
         displayText = 'Tarjeta';
         break;
       case 'transferencia':
-        color = AppColors.primary;
+        color = Theme.of(context).primaryColor;
         icon = Icons.account_balance;
         displayText = 'Transferencia';
         break;

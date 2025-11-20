@@ -4,20 +4,25 @@ import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  static ThemeData createTheme({
+    required Color primaryColor,
+    required Color secondaryColor,
+    Brightness brightness = Brightness.light,
+  }) {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       
       // Color Scheme
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.surface,
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: primaryColor,
+        secondary: secondaryColor,
+        surface: brightness == Brightness.light ? AppColors.surface : const Color(0xFF1e1e1e),
         error: AppColors.error,
         onPrimary: AppColors.white,
         onSecondary: AppColors.white,
-        onSurface: AppColors.textPrimary,
+        onSurface: brightness == Brightness.light ? AppColors.textPrimary : AppColors.white,
         onError: AppColors.white,
       ),
       
@@ -262,6 +267,14 @@ class AppTheme {
           ),
         ),
       ),
+    );
+  }
+
+  static ThemeData get lightTheme {
+    return createTheme(
+      primaryColor: AppColors.primary,
+      secondaryColor: AppColors.secondary,
+      brightness: Brightness.light,
     );
   }
 }

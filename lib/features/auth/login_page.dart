@@ -44,14 +44,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     
     // Observar estado de autenticación
     final authState = ref.watch(authProvider);
+    
+    final primaryColor = Theme.of(context).primaryColor;
+    final secondaryColor = Theme.of(context).secondaryHeaderColor;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.secondary],
+            colors: [primaryColor, secondaryColor],
           ),
         ),
         child: Center(
@@ -76,8 +79,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.primary, AppColors.secondary],
+                            gradient: LinearGradient(
+                              colors: [primaryColor, secondaryColor],
                             ),
                             borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
                           ),

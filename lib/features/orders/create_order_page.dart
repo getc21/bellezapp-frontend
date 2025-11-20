@@ -205,7 +205,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                       )
                     : IconButton(
                         icon: const Icon(Icons.add_shopping_cart),
-                        color: AppColors.primary,
+                        color: Theme.of(context).primaryColor,
                         onPressed: () => _addToCart(product),
                       ),
               ),
@@ -291,13 +291,13 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                 return Container(
                   padding: const EdgeInsets.all(AppSizes.spacing12),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withValues(alpha: 0.1),
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                    border: Border.all(color: AppColors.primary),
+                    border: Border.all(color: Theme.of(context).primaryColor),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.person, color: AppColors.primary),
+                      Icon(Icons.person, color: Theme.of(context).primaryColor),
                       const SizedBox(width: AppSizes.spacing8),
                       Expanded(
                         child: Column(
@@ -433,9 +433,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                                 width: 80,
                                 child: Text(
                                   '\$${((item['price'] as num) * (item['quantity'] as int)).toStringAsFixed(2)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                                    color: Theme.of(context).primaryColor,
                                   ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -523,10 +523,10 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                         ),
                         Text(
                           '\$${total.toStringAsFixed(2)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: Theme.of(context).primaryColor,
                           ),
                         ),
                       ],
@@ -554,6 +554,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                         builder: (context, isCreating, _) {
                           return ElevatedButton(
                             onPressed: (items.isEmpty || isCreating) ? null : _createOrder,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                            ),
                             child: isCreating
                                 ? const SizedBox(
                                     height: 20,

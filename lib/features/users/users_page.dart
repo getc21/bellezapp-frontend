@@ -72,7 +72,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                   icon: const Icon(Icons.add, size: 20),
                   label: const Text('Nuevo Usuario'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.spacing24,
@@ -421,7 +421,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
                 ),
                 child: loading
@@ -580,7 +580,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
                 ),
                 child: loading

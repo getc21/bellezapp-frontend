@@ -133,7 +133,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       change: '',
       isPositive: true,
       icon: Icons.attach_money,
-      color: AppColors.primary,
+      color: Theme.of(context).primaryColor,
     );
   }
 
@@ -389,14 +389,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               (index) => FlSpot(index.toDouble(), salesByDay[index]),
             ),
             isCurved: true,
-            color: AppColors.primary,
+            color: Theme.of(context).primaryColor,
             barWidth: 2,
             dotData: const FlDotData(
               show: false,
             ), // Ocultar puntos para no saturar
             belowBarData: BarAreaData(
               show: true,
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
             ),
           ),
         ],
@@ -522,10 +522,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ),
                   Text(
                     '\$${(product['revenue'] as double).toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                 ],

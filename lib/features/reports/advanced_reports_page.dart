@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/providers/riverpod/reports_notifier.dart';
 import '../../shared/widgets/dashboard_layout.dart';
+import '../../shared/services/pdf_service.dart';
 
 class AdvancedReportsPage extends ConsumerStatefulWidget {
   const AdvancedReportsPage({super.key});
@@ -297,6 +298,7 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
               icon: const Icon(Icons.refresh),
               label: const Text('Actualizar'),
               style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.spacing24,
                   vertical: AppSizes.spacing16,
@@ -319,10 +321,167 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
             _buildTabButton(1, Icons.attach_money, 'Rentabilidad'),
             _buildTabButton(2, Icons.trending_up, 'Tendencias'),
             _buildTabButton(3, Icons.compare_arrows, 'Comparación'),
+            const SizedBox(width: AppSizes.spacing16),
+            _buildExportButton(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildExportButton() {
+    return PopupMenuButton<String>(
+      onSelected: (value) async {
+        final reportsState = ref.read(reportsProvider);
+        
+        try {
+          switch (value) {
+            case 'inventory':
+              await PdfService.generateInventoryRotationPdf(
+                data: reportsState.inventoryRotation,
+                startDate: _startDate,
+                endDate: _endDate,
+              );
+              _showSnackBar('Reporte de Rotación descargado');
+              break;
+            case 'profitability':
+              await PdfService.generateProfitabilityPdf(
+                data: reportsState.profitability,
+                startDate: _startDate,
+                endDate: _endDate,
+              );
+              _showSnackBar('Reporte de Rentabilidad descargado');
+              break;
+            case 'trends':
+              await PdfService.generateSalesTrendsPdf(
+                data: reportsState.salesTrends,
+                startDate: _startDate,
+                endDate: _endDate,
+                period: _selectedPeriod,
+              );
+              _showSnackBar('Reporte de Tendencias descargado');
+              break;
+            case 'comparison':
+              await PdfService.generateComparisonPdf(
+                data: reportsState.periodsComparison,
+                startDate: _startDate,
+                endDate: _endDate,
+              );
+              _showSnackBar('Reporte Comparativo descargado');
+              break;
+            case 'all':
+              await Future.wait([
+                PdfService.generateInventoryRotationPdf(
+                  data: reportsState.inventoryRotation,
+                  startDate: _startDate,
+                  endDate: _endDate,
+                ),
+                PdfService.generateProfitabilityPdf(
+                  data: reportsState.profitability,
+                  startDate: _startDate,
+                  endDate: _endDate,
+                ),
+                PdfService.generateSalesTrendsPdf(
+                  data: reportsState.salesTrends,
+                  startDate: _startDate,
+                  endDate: _endDate,
+                  period: _selectedPeriod,
+                ),
+                PdfService.generateComparisonPdf(
+                  data: reportsState.periodsComparison,
+                  startDate: _startDate,
+                  endDate: _endDate,
+                ),
+              ]);
+              _showSnackBar('Todos los reportes descargados');
+              break;
+          }
+        } catch (e) {
+          _showSnackBar('Error: ${e.toString()}', isError: true);
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        const PopupMenuItem<String>(
+          value: 'inventory',
+          child: Row(
+            children: [
+              Icon(Icons.inventory_2, size: 20),
+              SizedBox(width: 10),
+              Text('Rotación'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'profitability',
+          child: Row(
+            children: [
+              Icon(Icons.attach_money, size: 20),
+              SizedBox(width: 10),
+              Text('Rentabilidad'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'trends',
+          child: Row(
+            children: [
+              Icon(Icons.trending_up, size: 20),
+              SizedBox(width: 10),
+              Text('Tendencias'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'comparison',
+          child: Row(
+            children: [
+              Icon(Icons.compare_arrows, size: 20),
+              SizedBox(width: 10),
+              Text('Comparación'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'all',
+          child: Row(
+            children: [
+              Icon(Icons.description, size: 20),
+              SizedBox(width: 10),
+              Text('Todos los reportes'),
+            ],
+          ),
+        ),
+      ],
+      child: Tooltip(
+        message: 'Exportar a PDF',
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing16,
+            vertical: AppSizes.spacing12,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.file_download),
+              const SizedBox(width: AppSizes.spacing8),
+              const Text('Exportar'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildTabButton(int index, IconData icon, String label) {
@@ -341,7 +500,7 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primary : Colors.transparent,
+              color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
               width: 3,
             ),
           ),
@@ -350,13 +509,13 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected ? Theme.of(context).primaryColor : AppColors.textSecondary,
             ),
             const SizedBox(width: AppSizes.spacing8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? Theme.of(context).primaryColor : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -783,12 +942,12 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
                             );
                           }).toList(),
                           isCurved: true,
-                          color: AppColors.primary,
+                          color: Theme.of(context).primaryColor,
                           barWidth: 3,
                           dotData: const FlDotData(show: true),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: Theme.of(context).primaryColor.withOpacity(0.1),
                           ),
                         ),
                       ],
@@ -1049,7 +1208,7 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
         padding: const EdgeInsets.all(AppSizes.spacing16),
         child: Row(
           children: [
-            Icon(icon, size: 40, color: AppColors.primary),
+            Icon(icon, size: 40, color: Theme.of(context).primaryColor),
             const SizedBox(width: AppSizes.spacing16),
             Expanded(
               child: Column(

@@ -94,6 +94,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 onPressed: () => _showAddProductDialog(),
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo Producto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                ),
               ),
             ],
           ),
@@ -139,6 +142,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                             onPressed: () => _showAddProductDialog(),
                             icon: const Icon(Icons.add),
                             label: const Text('Agregar Primer Producto'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                            ),
                           ),
                         ],
                       ),
@@ -279,7 +285,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           )),
           DataCell(Text(
             '\$${(product['salePrice'] as num).toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
+            style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).primaryColor),
           )),
           DataCell(
             Text(
@@ -464,10 +470,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: Theme.of(dialogContext).primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: Theme.of(dialogContext).primaryColor.withOpacity(0.3),
                           width: 2,
                           style: BorderStyle.solid,
                         ),
@@ -483,10 +489,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                 errorBuilder: (context, error, stackTrace) {
                                   return Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                                      SizedBox(height: 8),
-                                      Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                    children: [
+                                      Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(dialogContext).primaryColor),
+                                      const SizedBox(height: 8),
+                                      const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
                                     ],
                                   );
                                 },
@@ -494,10 +500,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                             )
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
-                                SizedBox(height: 8),
-                                Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                              children: [
+                                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(dialogContext).primaryColor),
+                                const SizedBox(height: 8),
+                                const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
                               ],
                             ),
                     ),
@@ -843,7 +849,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
               ),
               child: isLoading
@@ -917,7 +923,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     border: const OutlineInputBorder(),
                     prefixIcon: Icon(
                       isAdding ? Icons.add_circle_outline : Icons.remove_circle_outline,
-                      color: isAdding ? AppColors.success : AppColors.error,
+                      color: isAdding ? Colors.green : AppColors.error,
                     ),
                   ),
                   autofocus: true,
@@ -983,7 +989,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
               ),
               child: isLoading
