@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/controllers/order_controller.dart';
+import '../../shared/providers/riverpod/order_notifier.dart';
 import '../../shared/services/pdf_export_service.dart';
 import 'advanced_reports_page.dart';
 
-class ReportsPage extends StatefulWidget {
+class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
 
   @override
-  State<ReportsPage> createState() => _ReportsPageState();
+  ConsumerState<ReportsPage> createState() => _ReportsPageState();
 }
 
-class _ReportsPageState extends State<ReportsPage> {
+class _ReportsPageState extends ConsumerState<ReportsPage> {
   String _selectedPeriod = 'Mes Actual';
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isDatePickerOpen = false;
-  final OrderController _orderController = Get.find<OrderController>();
   bool _hasInitialized = false;
 
   @override
@@ -33,10 +32,7 @@ class _ReportsPageState extends State<ReportsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasInitialized && mounted) {
         _hasInitialized = true;
-        // Solo cargar si no hay datos
-        if (_orderController.orders.isEmpty) {
-          _orderController.loadOrders();
-        }
+        ref.read(orderProvider.notifier).loadOrders();
       }
     });
   }
@@ -71,12 +67,12 @@ class _ReportsPageState extends State<ReportsPage> {
     }
   }
 
-  List<Map<String, dynamic>> _getFilteredOrders() {
+  List<Map<String, dynamic>> _getFilteredOrders(OrderState orderState) {
     if (_startDate == null || _endDate == null) {
-      return _orderController.orders;
+      return orderState.orders;
     }
 
-    return _orderController.orders.where((order) {
+    return orderState.orders.where((order) {
       final orderDate = order['orderDate'];
       if (orderDate == null) return false;
       
@@ -447,6 +443,8 @@ class _ReportsPageState extends State<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final orderState = ref.watch(orderProvider);
+    
     return DashboardLayout(
       title: 'Reportes',
       currentRoute: '/reports',
@@ -466,7 +464,7 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  Get.to(() => const AdvancedReportsPage());
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdvancedReportsPage()));
                 },
                 icon: const Icon(Icons.analytics),
                 label: const Text('Reportes Avanzados'),
