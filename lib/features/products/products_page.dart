@@ -516,8 +516,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     );
     
     var selectedImage = <XFile>[];
-    var imageBytes = '''''' '';
-    var imagePreview = product?['foto'] ?? '''''' '';
+    var imageBytes = '';
+    var imagePreview = product?['foto'] ?? '';
     final ImagePicker picker = ImagePicker();
     var isLoading = false;
     
