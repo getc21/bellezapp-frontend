@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -102,7 +103,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
               ),
               const Spacer(),
               ElevatedButton.icon(
-                onPressed: () => Navigator.of(context).pushNamed('/orders/create'),
+                onPressed: () => context.go('/orders/create'),
                 icon: const Icon(Icons.add),
                 label: const Text('Nueva Orden'),
                 style: ElevatedButton.styleFrom(
