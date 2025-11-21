@@ -187,6 +187,162 @@ class StoreNotifier extends StateNotifier<StoreState> {
       return null;
     }
   }
+
+  // Crear tienda
+  Future<bool> createStore({
+    required String name,
+    String? address,
+    String? phone,
+    String? email,
+  }) async {
+    _initStoreProvider();
+    state = state.copyWith(isLoading: true, errorMessage: '');
+
+    try {
+      final result = await _storeProvider.createStore(
+        name: name,
+        address: address,
+        phone: phone,
+        email: email,
+      );
+
+      if (result['success']) {
+        final newStore = result['data'] as Map<String, dynamic>;
+        final updatedStores = [...state.stores, newStore];
+        state = state.copyWith(
+          stores: updatedStores,
+          isLoading: false,
+        );
+        if (kDebugMode) {
+          print('✅ Tienda creada: $name');
+        }
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: result['message'] ?? 'Error creando tienda',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Error de conexión: $e',
+      );
+      if (kDebugMode) {
+        print('❌ Error creando tienda: $e');
+      }
+      return false;
+    }
+  }
+
+  // Actualizar tienda
+  Future<bool> updateStore({
+    required String id,
+    required String name,
+    String? address,
+    String? phone,
+    String? email,
+  }) async {
+    _initStoreProvider();
+    state = state.copyWith(isLoading: true, errorMessage: '');
+
+    try {
+      final result = await _storeProvider.updateStore(
+        id: id,
+        name: name,
+        address: address,
+        phone: phone,
+        email: email,
+      );
+
+      if (result['success']) {
+        final updatedStore = result['data'] as Map<String, dynamic>;
+        final updatedStores = state.stores.map((store) {
+          return store['_id'] == id ? updatedStore : store;
+        }).toList();
+
+        // Si la tienda actualizada es la actual, actualizar también
+        final newCurrentStore = state.currentStore?['_id'] == id
+            ? updatedStore
+            : state.currentStore;
+
+        state = state.copyWith(
+          stores: updatedStores,
+          currentStore: newCurrentStore,
+          isLoading: false,
+        );
+        if (kDebugMode) {
+          print('✅ Tienda actualizada: $name');
+        }
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: result['message'] ?? 'Error actualizando tienda',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Error de conexión: $e',
+      );
+      if (kDebugMode) {
+        print('❌ Error actualizando tienda: $e');
+      }
+      return false;
+    }
+  }
+
+  // Eliminar tienda
+  Future<bool> deleteStore(String id) async {
+    _initStoreProvider();
+    state = state.copyWith(isLoading: true, errorMessage: '');
+
+    try {
+      final result = await _storeProvider.deleteStore(id);
+
+      if (result['success']) {
+        final updatedStores = state.stores
+            .where((store) => store['_id'] != id)
+            .toList();
+
+        // Si la tienda eliminada era la actual, seleccionar otra
+        Map<String, dynamic>? newCurrentStore = state.currentStore;
+        if (state.currentStore?['_id'] == id) {
+          newCurrentStore = updatedStores.isNotEmpty
+              ? updatedStores.first
+              : null;
+        }
+
+        state = state.copyWith(
+          stores: updatedStores,
+          currentStore: newCurrentStore,
+          isLoading: false,
+        );
+        if (kDebugMode) {
+          print('✅ Tienda eliminada');
+        }
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: result['message'] ?? 'Error eliminando tienda',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Error de conexión: $e',
+      );
+      if (kDebugMode) {
+        print('❌ Error eliminando tienda: $e');
+      }
+      return false;
+    }
+  }
 }
 
 // Provider

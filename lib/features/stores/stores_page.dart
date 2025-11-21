@@ -129,7 +129,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                       DataColumn2(label: Text('Dirección'), size: ColumnSize.L),
                       DataColumn2(label: Text('Teléfono'), size: ColumnSize.M),
                       DataColumn2(label: Text('Email'), size: ColumnSize.M),
-                      DataColumn2(label: Text('Estado'), size: ColumnSize.S),
                       DataColumn2(label: Text('Acciones'), size: ColumnSize.M),
                     ],
                     rows: _buildStoreRows(storeState.stores),
@@ -241,26 +240,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                 overflow: TextOverflow.ellipsis,
               )),
               DataCell(
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing8,
-                    vertical: AppSizes.spacing4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                  ),
-                  child: Text(
-                    isActive ? 'Activa' : 'Inactiva',
-                    style: TextStyle(
-                      color: isActive ? Colors.green[700] : Colors.red[700],
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-              DataCell(
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -306,7 +285,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
     final addressController = TextEditingController(text: store?['address'] ?? '');
     final phoneController = TextEditingController(text: store?['phone'] ?? '');
     final emailController = TextEditingController(text: store?['email'] ?? '');
-    final statusNotifier = ValueNotifier<String>(store?['status'] ?? 'active');
     var isLoading = false;
 
     showDialog(
@@ -375,51 +353,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  ValueListenableBuilder<String>(
-                    valueListenable: statusNotifier,
-                    builder: (context, status, _) => Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Estado de la tienda',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SegmentedButton<String>(
-                                  segments: const [
-                                    ButtonSegment(
-                                      value: 'active',
-                                      label: Text('Activa'),
-                                      icon: Icon(Icons.check_circle),
-                                    ),
-                                    ButtonSegment(
-                                      value: 'inactive',
-                                      label: Text('Inactiva'),
-                                      icon: Icon(Icons.cancel),
-                                    ),
-                                  ],
-                                  selected: {status},
-                                  onSelectionChanged: (value) {
-                                    statusNotifier.value = value.first;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: AppSizes.spacing8),
                   const Text(
                     '* Campos requeridos',
@@ -463,7 +396,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                           email: emailController.text.trim().isEmpty 
                               ? null 
                               : emailController.text.trim(),
-                          status: statusNotifier.value,
                         );
                       } else {
                         success = await ref.read(storeProvider.notifier).createStore(
@@ -477,7 +409,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                           email: emailController.text.trim().isEmpty 
                               ? null 
                               : emailController.text.trim(),
-                          status: statusNotifier.value,
                         );
                       }
 
