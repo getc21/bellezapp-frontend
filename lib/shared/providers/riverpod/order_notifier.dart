@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../order_provider.dart' as order_api;
 import 'auth_notifier.dart';
 import 'store_notifier.dart';
+import '../../services/cache_service.dart';
 
 // Estado de órdenes
 class OrderState {
@@ -32,6 +33,7 @@ class OrderState {
 // Notifier para órdenes
 class OrderNotifier extends StateNotifier<OrderState> {
   final Ref ref;
+  final CacheService _cache = CacheService();
 
   OrderNotifier(this.ref) : super(OrderState());
 
@@ -43,17 +45,27 @@ class OrderNotifier extends StateNotifier<OrderState> {
     _orderProvider = order_api.OrderProvider(authState.token);
   }
 
-  // Cargar órdenes
+  /// Genera una clave de caché para órdenes basada en los parámetros
+  String _getCacheKey({
+    String? storeId,
+    String? customerId,
+    String? status,
+    String? startDate,
+    String? endDate,
+  }) {
+    return 'orders:$storeId:$customerId:$status:$startDate:$endDate';
+  }
+
+  // Cargar órdenes con soporte para caché
   Future<void> loadOrders({
     String? storeId,
     String? customerId,
     String? status,
     String? startDate,
     String? endDate,
+    bool forceRefresh = false,
   }) async {
     _initOrderProvider();
-
-    state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
       // Usar storeId proporcionado o obtener del state actual
@@ -69,6 +81,28 @@ class OrderNotifier extends StateNotifier<OrderState> {
         print('effectiveStoreId: $effectiveStoreId');
       }
 
+      final cacheKey = _getCacheKey(
+        storeId: effectiveStoreId,
+        customerId: customerId,
+        status: status,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      // Intentar obtener del caché si no es forzado
+      if (!forceRefresh) {
+        final cachedOrders = _cache.get<List<Map<String, dynamic>>>(cacheKey);
+        if (cachedOrders != null) {
+          state = state.copyWith(orders: cachedOrders, isLoading: false);
+          return;
+        }
+      }
+
+      // Si no está en caché, mostrar loading
+      if (!state.isLoading) {
+        state = state.copyWith(isLoading: true, errorMessage: '');
+      }
+
       final result = await _orderProvider.getOrders(
         storeId: effectiveStoreId,
         customerId: customerId,
@@ -79,44 +113,62 @@ class OrderNotifier extends StateNotifier<OrderState> {
 
       if (result['success']) {
         final orders = List<Map<String, dynamic>>.from(result['data']);
-        state = state.copyWith(orders: orders);
+        // Almacenar en caché con 10 minutos de TTL
+        _cache.set(
+          cacheKey,
+          orders,
+          ttl: const Duration(minutes: 10),
+        );
+        state = state.copyWith(orders: orders, isLoading: false);
       } else {
         state = state.copyWith(
           errorMessage: result['message'] ?? 'Error cargando órdenes',
+          isLoading: false,
         );
       }
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Error de conexión: $e',
+        isLoading: false,
       );
     }
-    
-    state = state.copyWith(isLoading: false);
   }
 
   // Cargar órdenes de la tienda actual
-  Future<void> loadOrdersForCurrentStore() async {
+  Future<void> loadOrdersForCurrentStore({bool forceRefresh = false}) async {
     _initOrderProvider();
     final storeState = ref.read(storeProvider);
 
     if (storeState.currentStore != null) {
-      await loadOrders(storeId: storeState.currentStore!['_id']);
+      await loadOrders(
+        storeId: storeState.currentStore!['_id'],
+        forceRefresh: forceRefresh,
+      );
     } else {
       state = state.copyWith(orders: []);
     }
   }
 
-  // Obtener orden por ID
+  // Obtener orden por ID con caché
   Future<Map<String, dynamic>?> getOrderById(String id) async {
     _initOrderProvider();
+    
+    final cacheKey = 'order:$id';
+    final cached = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     state = state.copyWith(isLoading: true);
 
     try {
       final result = await _orderProvider.getOrderById(id);
 
       if (result['success']) {
+        final order = result['data'] as Map<String, dynamic>;
+        _cache.set(cacheKey, order, ttl: const Duration(minutes: 10));
         state = state.copyWith(isLoading: false);
-        return result['data'];
+        return order;
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -156,8 +208,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
       );
 
       if (result['success']) {
+        // Invalidar caché de órdenes después de crear una nueva
+        _cache.invalidatePattern('orders:$storeId');
         // Refrescar lista de órdenes
-        await loadOrders(storeId: storeId);
+        await loadOrders(storeId: storeId, forceRefresh: true);
         state = state.copyWith(isLoading: false);
         return true;
       } else {
@@ -191,7 +245,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
       );
 
       if (result['success']) {
-        await loadOrdersForCurrentStore();
+        // Invalidar caché de orden actualizado
+        _cache.invalidate('order:$id');
+        _cache.invalidatePattern('orders:');
+        await loadOrdersForCurrentStore(forceRefresh: true);
         state = state.copyWith(isLoading: false);
         return true;
       } else {
@@ -210,7 +267,7 @@ class OrderNotifier extends StateNotifier<OrderState> {
     }
   }
 
-  // Obtener reporte de ventas
+  // Obtener reporte de ventas con caché
   Future<Map<String, dynamic>?> getSalesReport({
     String? storeId,
     String? startDate,
@@ -218,6 +275,13 @@ class OrderNotifier extends StateNotifier<OrderState> {
     String? groupBy,
   }) async {
     _initOrderProvider();
+    
+    final cacheKey = 'report:sales:$storeId:$startDate:$endDate:$groupBy';
+    final cached = _cache.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
@@ -229,8 +293,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
       );
 
       if (result['success']) {
+        final report = result['data'] as Map<String, dynamic>;
+        _cache.set(cacheKey, report, ttl: const Duration(minutes: 15));
         state = state.copyWith(isLoading: false);
-        return result['data'];
+        return report;
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -256,6 +322,11 @@ class OrderNotifier extends StateNotifier<OrderState> {
       final result = await _orderProvider.deleteOrder(id);
 
       if (result['success']) {
+        // Invalidar cachés relacionados
+        _cache.invalidate('order:$id');
+        _cache.invalidatePattern('orders:');
+        _cache.invalidatePattern('report:');
+        
         state = state.copyWith(
           orders: state.orders.where((o) => o['_id'] != id).toList(),
           isLoading: false,

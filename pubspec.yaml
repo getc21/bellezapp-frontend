@@ -17,6 +17,9 @@ dependencies:
   flutter_riverpod: ^2.4.10
   riverpod_annotation: ^2.3.5
   
+  # Routing & Navigation
+  go_router: ^14.0.0
+  
   # HTTP & API
   http: ^1.2.2
   http_parser: ^4.0.2

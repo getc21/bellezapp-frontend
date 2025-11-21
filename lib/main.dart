@@ -2,20 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
-import 'shared/widgets/loading_indicator.dart';
-import 'features/auth/login_page.dart';
-import 'features/dashboard/dashboard_page.dart';
-import 'features/orders/orders_page.dart';
-import 'features/orders/create_order_page.dart';
-import 'features/products/products_page.dart';
-import 'features/reports/reports_page.dart';
-import 'features/categories/categories_page.dart';
-import 'features/locations/locations_page.dart';
-import 'features/users/users_page.dart';
-import 'features/suppliers/suppliers_page.dart';
-import 'features/customers/customers_page.dart';
-import 'features/settings/theme_settings_page.dart';
-import 'shared/providers/riverpod/auth_notifier.dart';
+import 'shared/config/app_router.dart';
 import 'shared/providers/riverpod/theme_notifier.dart';
 
 void main() async {
@@ -32,7 +19,6 @@ class BellezAppWeb extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
     final themeState = ref.watch(themeProvider);
     
     // Obtener el tema actual basado en los colores seleccionados
@@ -53,7 +39,7 @@ class BellezAppWeb extends ConsumerWidget {
       currentTheme = AppTheme.lightTheme;
     }
     
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'BellezApp - Panel de Administración',
       debugShowCheckedModeBanner: false,
       theme: currentTheme,
@@ -67,29 +53,7 @@ class BellezAppWeb extends ConsumerWidget {
         Locale('es', 'ES'),
         Locale('en', 'US'),
       ],
-      home: authState.isLoading
-          ? const Scaffold(
-              body: LoadingIndicator(
-                message: 'Inicializando...',
-              ),
-            )
-          : authState.isLoggedIn
-              ? const DashboardPage()
-              : const LoginPage(),
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/dashboard': (context) => const DashboardPage(),
-        '/orders': (context) => const OrdersPage(),
-        '/orders/create': (context) => const CreateOrderPage(),
-        '/products': (context) => const ProductsPage(),
-        '/customers': (context) => const CustomersPage(),
-        '/reports': (context) => const ReportsPage(),
-        '/categories': (context) => const CategoriesPage(),
-        '/locations': (context) => const LocationsPage(),
-        '/suppliers': (context) => const SuppliersPage(),
-        '/users': (context) => const UsersPage(),
-        '/settings/theme': (context) => const ThemeSettingsPage(),
-      },
+      routerConfig: AppRouter.router,
     );
   }
 }
