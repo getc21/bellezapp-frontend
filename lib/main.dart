@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/config/app_router.dart';
 import 'shared/providers/riverpod/theme_notifier.dart';
+import 'shared/widgets/persistence_initializer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
-      child: BellezAppWeb(),
+      child: PersistenceInitializer(
+        child: BellezAppWeb(),
+      ),
     ),
   );
 }
