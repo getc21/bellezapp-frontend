@@ -21,21 +21,15 @@ class OrdersPage extends ConsumerStatefulWidget {
 class _OrdersPageState extends ConsumerState<OrdersPage> {
   String _paymentFilter = 'Todos';
   late final ScrollController _scrollController;
-  
-  // Variables para optimizar rendimiento
-  List<Map<String, dynamic>> _filteredOrders = [];
-  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     
-    // Cargar datos de forma no bloqueante
+    // Cargar órdenes cuando se abre la página
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_hasInitialized) {
-        _loadOrdersOptimized();
-      }
+      ref.read(orderProvider.notifier).loadOrdersForCurrentStore();
     });
   }
 
@@ -43,7 +37,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Recargar órdenes cuando volvemos a esta página desde otra ruta
-    _loadOrdersOptimized();
+    ref.read(orderProvider.notifier).loadOrdersForCurrentStore(forceRefresh: true);
   }
 
   @override
@@ -52,39 +46,16 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     super.dispose();
   }
 
-  Future<void> _loadOrdersOptimized() async {
-    // Solo ejecutar la carga si no hay órdenes cargadas todavía
-    final orderState = ref.read(orderProvider);
-    if (orderState.orders.isEmpty && !orderState.isLoading) {
-      await ref.read(orderProvider.notifier).loadOrdersForCurrentStore();
-    }
-    // Marcar como inicializado solo después de que se complete la carga
-    // o cuando ya hay órdenes disponibles
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _hasInitialized = true;
-        _updateFilteredOrders();
-      }
-    });
-  }
-
-  void _updateFilteredOrders() {
-    final orderState = ref.read(orderProvider);
-    // Calcular órdenes filtradas sin reconstruir todo
-    _filteredOrders = orderState.orders
-        .where((o) => _paymentFilter == 'Todos' || o['paymentMethod'] == _paymentFilter)
-        .toList();
-    
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Observar estado de órdenes y moneda
     final orderState = ref.watch(orderProvider);
     ref.watch(currencyProvider); // Permite reconstruir cuando cambia la moneda
+    
+    // Filtrar órdenes según el filtro de pago
+    final filteredOrders = orderState.orders
+        .where((o) => _paymentFilter == 'Todos' || o['paymentMethod'] == _paymentFilter)
+        .toList();
 
     return DashboardLayout(
       title: 'Órdenes',
@@ -107,7 +78,6 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 onChanged: (value) {
                   setState(() {
                     _paymentFilter = value!;
-                    _updateFilteredOrders();
                   });
                 },
               ),
@@ -125,7 +95,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
           const SizedBox(height: AppSizes.spacing24),
           
           // Orders Table
-          if (orderState.isLoading || !_hasInitialized)
+          if (orderState.isLoading)
             SizedBox(
               height: 600,
               child: Card(
@@ -155,7 +125,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 ),
               ),
             )
-          else if (_filteredOrders.isEmpty)
+          else if (filteredOrders.isEmpty)
             Card(
               child: Center(
                 child: Padding(
@@ -207,8 +177,16 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
   }
 
   List<DataRow2> _buildOrderRows() {
+    // Obtener estado de órdenes
+    final orderState = ref.watch(orderProvider);
+    
+    // Filtrar órdenes según el filtro de pago
+    final filteredOrders = orderState.orders
+        .where((o) => _paymentFilter == 'Todos' || o['paymentMethod'] == _paymentFilter)
+        .toList();
+    
     // Usar órdenes ya filtradas en lugar de recalcular
-    return _filteredOrders.map((order) {
+    return filteredOrders.map((order) {
       final items = order['items'] as List? ?? [];
       final customerData = order['customerId'];
       
