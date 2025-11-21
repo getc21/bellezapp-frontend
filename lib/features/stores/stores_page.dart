@@ -6,6 +6,7 @@ import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/providers/riverpod/store_notifier.dart';
+import '../../shared/providers/riverpod/auth_notifier.dart';
 
 class StoresPage extends ConsumerStatefulWidget {
   const StoresPage({super.key});
@@ -41,6 +42,39 @@ class _StoresPageState extends ConsumerState<StoresPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.currentUser?['role'] == 'admin';
+    
+    // Si no es admin, mostrar página de acceso denegado
+    if (!isAdmin) {
+      return DashboardLayout(
+        title: 'Tiendas',
+        currentRoute: '/stores',
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.spacing24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 64, color: AppColors.error),
+                const SizedBox(height: AppSizes.spacing16),
+                const Text(
+                  'Acceso Denegado',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.error),
+                ),
+                const SizedBox(height: AppSizes.spacing8),
+                const Text(
+                  'Solo los administradores pueden acceder a la gestión de tiendas',
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     final storeState = ref.watch(storeProvider);
     
     return DashboardLayout(
