@@ -56,7 +56,7 @@ class OrderNotifier extends StateNotifier<OrderState> {
     return 'orders:$storeId:$customerId:$status:$startDate:$endDate';
   }
 
-  // Cargar órdenes con soporte para caché y streaming progresivo
+  // Cargar órdenes con soporte para caché
   Future<void> loadOrders({
     String? storeId,
     String? customerId,
@@ -98,8 +98,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
         }
       }
 
-      // Si no está en caché, mostrar loading y empezar a mostrar datos progresivamente
-      state = state.copyWith(isLoading: true, errorMessage: '');
+      // Si no está en caché, mostrar loading
+      if (!state.isLoading) {
+        state = state.copyWith(isLoading: true, errorMessage: '');
+      }
 
       final result = await _orderProvider.getOrders(
         storeId: effectiveStoreId,
@@ -111,39 +113,12 @@ class OrderNotifier extends StateNotifier<OrderState> {
 
       if (result['success']) {
         final orders = List<Map<String, dynamic>>.from(result['data']);
-        
-        // PROGRESSIVE STREAMING: Mostrar órdenes en chunks
-        // Esto evita que se congele cuando hay muchas órdenes
-        const chunkSize = 20; // Mostrar 20 órdenes a la vez
-        
-        for (int i = 0; i < orders.length; i += chunkSize) {
-          final end = (i + chunkSize < orders.length) ? i + chunkSize : orders.length;
-          final chunk = orders.sublist(i, end);
-          
-          // Actualizar state con el chunk actual
-          final currentOrders = [...state.orders];
-          currentOrders.addAll(chunk);
-          
-          state = state.copyWith(
-            orders: currentOrders,
-            isLoading: i + chunkSize < orders.length, // Mantener loading si hay más
-          );
-          
-          // Pequeño delay entre chunks para permitir que UI se actualice
-          // Esto hace que el loading sea visible y fluido
-          if (i + chunkSize < orders.length) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
-        }
-        
         // Almacenar en caché con 10 minutos de TTL
         _cache.set(
           cacheKey,
           orders,
           ttl: const Duration(minutes: 10),
         );
-        
-        // Final: cargar completado
         state = state.copyWith(orders: orders, isLoading: false);
       } else {
         state = state.copyWith(

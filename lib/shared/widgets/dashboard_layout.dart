@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../providers/riverpod/auth_notifier.dart';
@@ -36,7 +37,9 @@ class DashboardLayout extends ConsumerWidget {
             onPressed: () {
               Navigator.of(dialogContext).pop();
               ref.read(authProvider.notifier).logout();
-              Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+              if (context.mounted) {
+                context.go('/login');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).primaryColor,
@@ -295,10 +298,12 @@ class DashboardLayout extends ConsumerWidget {
         return 5;
       case '/customers':
         return 6;
-      case '/users':
+      case '/stores':
         return 7;
-      case '/reports':
+      case '/users':
         return 8;
+      case '/reports':
+        return 9;
       default:
         return 0;
     }
@@ -313,6 +318,7 @@ class DashboardLayout extends ConsumerWidget {
       '/locations',
       '/orders',
       '/customers',
+      '/stores',
       '/users',
       '/reports',
     ];
@@ -360,6 +366,10 @@ class DashboardLayout extends ConsumerWidget {
     
     if (isAdmin) {
       destinations.addAll([
+        const NavigationRailDestination(
+          icon: Icon(Icons.store_outlined),
+          label: Text('Tiendas'),
+        ),
         const NavigationRailDestination(
           icon: Icon(Icons.person_outline),
           label: Text('Usuarios'),
@@ -535,8 +545,15 @@ class _SidebarWidget extends StatelessWidget {
                       route: '/customers',
                       isSidebarCollapsed: isSidebarCollapsed,
                     ),
-                    // ⭐ SOLO MOSTRAR USUARIOS Y REPORTES PARA ADMINISTRADORES
+                    // ⭐ SOLO MOSTRAR TIENDAS, USUARIOS Y REPORTES PARA ADMINISTRADORES
                     if (isAdmin) ...[
+                      _buildNavItem(
+                        context: context,
+                        icon: Icons.store_outlined,
+                        label: 'Tiendas',
+                        route: '/stores',
+                        isSidebarCollapsed: isSidebarCollapsed,
+                      ),
                       _buildNavItem(
                         context: context,
                         icon: Icons.person_outline,
@@ -567,7 +584,7 @@ class _SidebarWidget extends StatelessWidget {
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                   child: InkWell(
-                    onTap: () => Navigator.of(context).pushNamed('/settings/theme'),
+                    onTap: () => context.go('/settings/theme'),
                     borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -642,7 +659,7 @@ class _SidebarWidget extends StatelessWidget {
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
         child: InkWell(
-          onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(route, (_) => true),
+          onTap: () => context.go(route),
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
           child: Container(
             padding: EdgeInsets.symmetric(

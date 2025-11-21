@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
+import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/providers/riverpod/order_notifier.dart';
 
 class OrdersPage extends ConsumerStatefulWidget {
@@ -82,7 +83,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Filters (siempre visibles mientras se carga)
+          // Filters
           Row(
             children: [
               DropdownButton<String>(
@@ -113,40 +114,15 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
           ),
           const SizedBox(height: AppSizes.spacing24),
           
-          // Status de carga progresiva
-          if (orderState.isLoading)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSizes.spacing16),
-                child: Row(
-                  children: [
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: AppSizes.spacing16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Cargando órdenes...',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${orderState.orders.length} órdenes cargadas',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          // Orders Table
+          if (orderState.isLoading || !_hasInitialized)
+            SizedBox(
+              height: 600,
+              child: Card(
+                child: Center(
+                  child: LoadingIndicator(
+                    message: 'Cargando órdenes...',
+                  ),
                 ),
               ),
             )

@@ -48,7 +48,7 @@ class ProductNotifier extends StateNotifier<ProductState> {
     return 'products:$storeId:$categoryId:$supplierId:$locationId:$lowStock';
   }
 
-  // Cargar productos con caché y streaming progresivo
+  // Cargar productos con caché
   Future<void> loadProducts({
     String? storeId,
     String? categoryId,
@@ -89,7 +89,9 @@ class ProductNotifier extends StateNotifier<ProductState> {
         }
       }
 
-      state = state.copyWith(isLoading: true, errorMessage: '');
+      if (!state.isLoading) {
+        state = state.copyWith(isLoading: true, errorMessage: '');
+      }
 
       final result = await _productProvider.getProducts(
         storeId: effectiveStoreId,
@@ -101,27 +103,6 @@ class ProductNotifier extends StateNotifier<ProductState> {
 
       if (result['success']) {
         final products = List<Map<String, dynamic>>.from(result['data']);
-        
-        // PROGRESSIVE STREAMING: Mostrar productos en chunks
-        const chunkSize = 25;
-        
-        for (int i = 0; i < products.length; i += chunkSize) {
-          final end = (i + chunkSize < products.length) ? i + chunkSize : products.length;
-          final chunk = products.sublist(i, end);
-          
-          final currentProducts = [...state.products];
-          currentProducts.addAll(chunk);
-          
-          state = state.copyWith(
-            products: currentProducts,
-            isLoading: i + chunkSize < products.length,
-          );
-          
-          if (i + chunkSize < products.length) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
-        }
-        
         _cache.set(cacheKey, products, ttl: const Duration(minutes: 10));
         state = state.copyWith(products: products, isLoading: false);
       } else {

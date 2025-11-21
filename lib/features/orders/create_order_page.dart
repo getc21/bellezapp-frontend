@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/providers/riverpod/product_notifier.dart';
@@ -540,7 +541,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/orders', (_) => true),
+                    onPressed: () => context.go('/orders'),
                     child: const Text('Cancelar'),
                   ),
                 ),

@@ -12,6 +12,7 @@ import '../../features/locations/locations_page.dart';
 import '../../features/users/users_page.dart';
 import '../../features/suppliers/suppliers_page.dart';
 import '../../features/customers/customers_page.dart';
+import '../../features/stores/stores_page.dart';
 import '../../features/settings/theme_settings_page.dart';
 import '../../shared/providers/riverpod/auth_notifier.dart';
 import 'route_transitions.dart';
@@ -59,17 +60,6 @@ class AppRouter {
   /// Cada ruta es lazy-loaded y puede tener transiciones personalizadas
   static List<RouteBase> _buildRoutes() {
     return [
-      // Ruta de login
-      GoRoute(
-        path: '/login',
-        name: 'login',
-        pageBuilder: (context, state) => _buildPage(
-          child: const LoginPage(),
-          state: state,
-          transitionType: RouteTransitionType.fade,
-        ),
-      ),
-
       // Ruta de login
       GoRoute(
         path: '/login',
@@ -191,6 +181,17 @@ class AppRouter {
         ),
       ),
 
+      // Ruta de tiendas
+      GoRoute(
+        path: '/stores',
+        name: 'stores',
+        pageBuilder: (context, state) => _buildPage(
+          child: const StoresPage(),
+          state: state,
+          transitionType: RouteTransitionType.slideLeft,
+        ),
+      ),
+
       // Ruta de configuración de tema
       GoRoute(
         path: '/settings/theme',
@@ -222,13 +223,20 @@ class AppRouter {
     return CustomTransitionPage(
       key: state.pageKey,
       child: child,
-      transitionsBuilder: _getTransition(transitionType),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return _getTransition(transitionType)(
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        );
+      },
       transitionDuration: const Duration(milliseconds: 300),
     );
   }
 
   /// Obtiene el builder de transición basado en el tipo
-  static TransitionsBuilder Function(
+  static Widget Function(
     BuildContext,
     Animation<double>,
     Animation<double>,

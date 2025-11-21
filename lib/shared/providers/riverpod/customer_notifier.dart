@@ -72,33 +72,12 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 
       if (result['success']) {
         final customers = List<Map<String, dynamic>>.from(result['data'] ?? []);
-        
-        // PROGRESSIVE STREAMING: Mostrar clientes en chunks
-        const chunkSize = 20;
-        
-        for (int i = 0; i < customers.length; i += chunkSize) {
-          final end = (i + chunkSize < customers.length) ? i + chunkSize : customers.length;
-          final chunk = customers.sublist(i, end);
-          
-          final currentCustomers = [...state.customers];
-          currentCustomers.addAll(chunk);
-          
-          state = state.copyWith(
-            customers: currentCustomers,
-            isLoading: i + chunkSize < customers.length,
-          );
-          
-          if (i + chunkSize < customers.length) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
-        }
-        
         _cache.set(
           cacheKey,
           customers,
           ttl: const Duration(minutes: 10),
         );
-        state = state.copyWith(customers: customers, isLoading: false);
+        state = state.copyWith(customers: customers);
       } else {
         state = state.copyWith(
           errorMessage: result['message'] ?? 'Error cargando clientes',
