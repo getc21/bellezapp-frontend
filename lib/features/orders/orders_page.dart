@@ -280,83 +280,314 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     final customerData = order['customerId'];
     final customerName = customerData is Map ? (customerData['name'] ?? 'Sin nombre') : 'Sin cliente';
     final customerPhone = customerData is Map ? (customerData['phone'] ?? '') : '';
+    final paymentMethod = order['paymentMethod'] as String? ?? 'efectivo';
+    final totalOrden = (order['totalOrden'] as num? ?? 0).toDouble();
+    final items = order['items'] as List? ?? [];
 
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text('Orden #$shortId'),
-        content: SizedBox(
-          width: 500,
+      builder: (BuildContext context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 650),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+            color: AppColors.white,
+          ),
           child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Cliente: $customerName', style: const TextStyle(fontWeight: FontWeight.bold)),
-                if (customerPhone.isNotEmpty) Text('Teléfono: $customerPhone'),
-                const SizedBox(height: 8),
-                Text('Total: \$${(order['totalOrden'] as num? ?? 0).toStringAsFixed(2)}', 
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Método de pago: ${_getPaymentMethodText(order['paymentMethod'] as String? ?? 'efectivo')}'),
-                Text('Fecha: ${_formatDate(order['orderDate'] ?? order['createdAt'])}'),
-                const SizedBox(height: 16),
-                const Text('Items:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const Divider(),
-                ...(order['items'] as List? ?? []).map((item) {
-                  final product = item['productId'];
-                  final productName = product is Map ? (product['name'] ?? 'Producto') : 'Producto';
-                  final price = item['price'] as num? ?? 0;
-                  final quantity = item['quantity'] as num? ?? 0;
-                  final subtotal = price * quantity;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(productName, style: const TextStyle(fontWeight: FontWeight.w500)),
-                              Text('\$${price.toStringAsFixed(2)} × $quantity',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.spacing24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(AppSizes.radiusLarge),
+                      topRight: Radius.circular(AppSizes.radiusLarge),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Orden #$shortId',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatDate(order['orderDate'] ?? order['createdAt']),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.white.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: AppColors.white),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(AppSizes.spacing24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Cliente Section
+                      _buildDetailSection(
+                        icon: Icons.person_outline,
+                        title: 'Cliente',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              customerName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (customerPhone.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                customerPhone,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
                             ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSizes.spacing20),
+
+                      // Payment & Total Section
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDetailSection(
+                              icon: Icons.payment_outlined,
+                              title: 'Método de pago',
+                              child: _buildPaymentChip(paymentMethod),
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.spacing16),
+                          Expanded(
+                            child: _buildDetailSection(
+                              icon: Icons.attach_money,
+                              title: 'Total',
+                              child: Text(
+                                '\$${totalOrden.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: AppSizes.spacing24),
+
+                      // Items Section
+                      Text(
+                        'Productos (${items.length})',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.spacing12),
+
+                      if (items.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing16),
+                            child: Text(
+                              'Sin productos',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.border),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                          ),
+                          child: Column(
+                            children: items.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              final product = item['productId'];
+                              final productName = product is Map ? (product['name'] ?? 'Producto') : 'Producto';
+                              final price = item['price'] as num? ?? 0;
+                              final quantity = item['quantity'] as num? ?? 0;
+                              final subtotal = (price * quantity).toDouble();
+                              final isLast = index == items.length - 1;
+
+                              return Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(AppSizes.spacing12),
+                                    child: Row(
+                                      children: [
+                                        // Product Icon
+                                        Container(
+                                          padding: const EdgeInsets.all(AppSizes.spacing8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                                          ),
+                                          child: Icon(
+                                            Icons.shopping_bag_outlined,
+                                            size: 20,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppSizes.spacing12),
+                                        // Product Details
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                productName,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '\$${price.toStringAsFixed(2)} × $quantity',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        // Subtotal
+                                        Text(
+                                          '\$${subtotal.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isLast)
+                                    const Divider(height: 1, color: AppColors.border),
+                                ],
+                              );
+                            }).toList(),
                           ),
                         ),
-                        Text('\$${subtotal.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  );
-                }),
+                    ],
+                  ),
+                ),
+
+                // Footer Actions
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.spacing24,
+                    AppSizes.spacing16,
+                    AppSizes.spacing24,
+                    AppSizes.spacing24,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.print_outlined),
+                          label: const Text('Imprimir'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.spacing12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.check_circle_outline),
+                          label: const Text('Listo'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-        ],
       ),
     );
   }
 
-  String _getPaymentMethodText(String method) {
-    switch (method.toLowerCase()) {
-      case 'efectivo':
-        return 'Efectivo';
-      case 'tarjeta':
-        return 'Tarjeta';
-      case 'transferencia':
-        return 'Transferencia';
-      default:
-        return method;
-    }
+  Widget _buildDetailSection({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
   }
-
   Widget _buildPaymentChip(String paymentMethod) {
     Color color;
     IconData icon;
