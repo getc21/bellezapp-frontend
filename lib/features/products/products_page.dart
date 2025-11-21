@@ -8,7 +8,6 @@ import 'dart:convert';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/providers/riverpod/product_notifier.dart';
 import '../../shared/providers/riverpod/category_notifier.dart';
 import '../../shared/providers/riverpod/location_notifier.dart';
@@ -122,13 +121,38 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               print('   - products length: ${productState.products.length}');
               
               if (productState.isLoading) {
-                return SizedBox(
-                  height: 600,
-                  child: Card(
-                    child: Center(
-                      child: LoadingIndicator(
-                        message: 'Cargando productos...',
-                      ),
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSizes.spacing16),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: AppSizes.spacing16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Cargando productos...',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${productState.products.length} productos cargados',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
