@@ -57,6 +57,8 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(currencyProvider); // Permite reconstruir cuando cambia la moneda
+    
     return DashboardLayout(
       title: 'Nueva Orden',
       currentRoute: '/orders',

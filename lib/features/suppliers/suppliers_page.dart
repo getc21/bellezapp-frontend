@@ -41,6 +41,7 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
     return Consumer(
       builder: (context, ref, _) {
         final supplierState = ref.watch(supplierProvider);
+        ref.watch(currencyProvider); // Permite reconstruir cuando cambia la moneda
 
         return DashboardLayout(
       currentRoute: '/suppliers',

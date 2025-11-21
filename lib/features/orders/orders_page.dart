@@ -75,8 +75,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Observar estado de órdenes
+    // Observar estado de órdenes y moneda
     final orderState = ref.watch(orderProvider);
+    ref.watch(currencyProvider); // Permite reconstruir cuando cambia la moneda
 
     return DashboardLayout(
       title: 'Órdenes',

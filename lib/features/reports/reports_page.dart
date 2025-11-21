@@ -450,6 +450,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderProvider);
+    ref.watch(currencyProvider); // Permite reconstruir cuando cambia la moneda
     
     return DashboardLayout(
       title: 'Reportes',
