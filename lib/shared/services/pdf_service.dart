@@ -417,6 +417,282 @@ class PdfService {
     }
   }
 
+  static Future<String> generateOrderPdf({
+    required Map<String, dynamic> order,
+  }) async {
+    final pdf = pw.Document();
+    
+    // Datos de la orden
+    final orderId = order['_id']?.toString() ?? 'N/A';
+    final shortId = orderId.length > 8 ? orderId.substring(orderId.length - 8) : orderId;
+    final customerData = order['customerId'];
+    final customerName = customerData is Map ? (customerData['name'] ?? 'Sin nombre') : 'Sin cliente';
+    final customerPhone = customerData is Map ? (customerData['phone'] ?? '') : '';
+    final paymentMethod = order['paymentMethod'] as String? ?? 'efectivo';
+    final totalOrden = (order['totalOrden'] as num? ?? 0).toDouble();
+    final items = order['items'] as List? ?? [];
+    final orderDate = order['orderDate'] ?? order['createdAt'];
+    
+    String _getPaymentMethodText(String method) {
+      switch (method.toLowerCase()) {
+        case 'efectivo':
+          return 'Efectivo';
+        case 'tarjeta':
+          return 'Tarjeta';
+        case 'transferencia':
+          return 'Transferencia';
+        default:
+          return method;
+      }
+    }
+    
+    String _formatDate(dynamic date) {
+      if (date == null) return 'N/A';
+      try {
+        final dateTime = date is DateTime ? date : DateTime.parse(date.toString());
+        final localDateTime = dateTime.toLocal();
+        return DateFormat('dd/MM/yyyy HH:mm').format(localDateTime);
+      } catch (e) {
+        return 'N/A';
+      }
+    }
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Encabezado
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'BELLEZAPP',
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        'Sistema de Gestión de Belleza',
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        'ORDEN #$shortId',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        'Fecha: ${_formatDate(orderDate)}',
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 30),
+
+              // Línea divisoria
+              pw.Divider(),
+              pw.SizedBox(height: 20),
+
+              // Información del Cliente
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'INFORMACIÓN DEL CLIENTE',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Text('Nombre: $customerName'),
+                  if (customerPhone.isNotEmpty)
+                    pw.Text('Teléfono: $customerPhone'),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+
+              // Línea divisoria
+              pw.Divider(),
+              pw.SizedBox(height: 20),
+
+              // Tabla de productos
+              pw.Text(
+                'DETALLE DE PRODUCTOS',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 10),
+
+              if (items.isEmpty)
+                pw.Text('Sin productos en esta orden')
+              else
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(3),
+                    1: const pw.FlexColumnWidth(1),
+                    2: const pw.FlexColumnWidth(1),
+                    3: const pw.FlexColumnWidth(1),
+                  },
+                  children: [
+                    // Encabezado de tabla
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey300,
+                      ),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Producto',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Precio',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Cantidad',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Subtotal',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Filas de productos
+                    ...items.map((item) {
+                      final product = item['productId'];
+                      final productName = product is Map
+                          ? (product['name'] ?? 'Producto')
+                          : 'Producto';
+                      final price = (item['price'] as num? ?? 0).toDouble();
+                      final quantity = (item['quantity'] as num? ?? 0).toInt();
+                      final subtotal = price * quantity;
+
+                      return pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(productName),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                              '\$${price.toStringAsFixed(2)}',
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                              quantity.toString(),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                              '\$${subtotal.toStringAsFixed(2)}',
+                              textAlign: pw.TextAlign.right,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ],
+                ),
+
+              pw.SizedBox(height: 20),
+
+              // Resumen financiero
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        'Método de pago: ${_getPaymentMethodText(paymentMethod)}',
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.SizedBox(height: 10),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            'TOTAL: ',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                          pw.Text(
+                            '\$${totalOrden.toStringAsFixed(2)}',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              pw.Spacer(),
+
+              // Pie de página
+              pw.Divider(),
+              pw.Text(
+                'Gracias por tu compra en BellezApp',
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return await _savePdf(pdf, 'Orden_$shortId');
+  }
+
   static void _downloadFileWeb(String filename, List<int> bytes) {
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
