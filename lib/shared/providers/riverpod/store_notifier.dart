@@ -207,15 +207,11 @@ class StoreNotifier extends StateNotifier<StoreState> {
       );
 
       if (result['success']) {
-        final newStore = result['data'] as Map<String, dynamic>;
-        final updatedStores = [...state.stores, newStore];
-        state = state.copyWith(
-          stores: updatedStores,
-          isLoading: false,
-        );
         if (kDebugMode) {
           print('✅ Tienda creada: $name');
         }
+        // Recargar lista de tiendas para asegurar datos completos
+        await loadStores(autoSelect: false);
         return true;
       } else {
         state = state.copyWith(
@@ -257,24 +253,11 @@ class StoreNotifier extends StateNotifier<StoreState> {
       );
 
       if (result['success']) {
-        final updatedStore = result['data'] as Map<String, dynamic>;
-        final updatedStores = state.stores.map((store) {
-          return store['_id'] == id ? updatedStore : store;
-        }).toList();
-
-        // Si la tienda actualizada es la actual, actualizar también
-        final newCurrentStore = state.currentStore?['_id'] == id
-            ? updatedStore
-            : state.currentStore;
-
-        state = state.copyWith(
-          stores: updatedStores,
-          currentStore: newCurrentStore,
-          isLoading: false,
-        );
         if (kDebugMode) {
           print('✅ Tienda actualizada: $name');
         }
+        // Recargar lista de tiendas para asegurar datos completos
+        await loadStores(autoSelect: false);
         return true;
       } else {
         state = state.copyWith(
@@ -304,26 +287,11 @@ class StoreNotifier extends StateNotifier<StoreState> {
       final result = await _storeProvider.deleteStore(id);
 
       if (result['success']) {
-        final updatedStores = state.stores
-            .where((store) => store['_id'] != id)
-            .toList();
-
-        // Si la tienda eliminada era la actual, seleccionar otra
-        Map<String, dynamic>? newCurrentStore = state.currentStore;
-        if (state.currentStore?['_id'] == id) {
-          newCurrentStore = updatedStores.isNotEmpty
-              ? updatedStores.first
-              : null;
-        }
-
-        state = state.copyWith(
-          stores: updatedStores,
-          currentStore: newCurrentStore,
-          isLoading: false,
-        );
         if (kDebugMode) {
           print('✅ Tienda eliminada');
         }
+        // Recargar lista de tiendas para sincronizar estado
+        await loadStores(autoSelect: true);
         return true;
       } else {
         state = state.copyWith(
