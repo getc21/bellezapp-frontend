@@ -200,3 +200,4 @@ final themeColorsProvider = Provider<ThemeModel>((ref) {
     orElse: () => notifier.availableThemes.first,
   );
 });
+

@@ -647,3 +647,4 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     );
   }
 }
+

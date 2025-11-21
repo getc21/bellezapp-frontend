@@ -830,3 +830,4 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
     );
   }
 }
+

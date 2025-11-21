@@ -232,3 +232,4 @@ class SupplierNotifier extends StateNotifier<SupplierState> {
 final supplierProvider = StateNotifierProvider<SupplierNotifier, SupplierState>((ref) {
   return SupplierNotifier(ref);
 });
+

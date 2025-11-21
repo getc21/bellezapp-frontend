@@ -222,3 +222,4 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
 final categoryProvider = StateNotifierProvider<CategoryNotifier, CategoryState>((ref) {
   return CategoryNotifier(ref);
 });
+

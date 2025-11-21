@@ -62,3 +62,4 @@ class AppSizes {
   // Max Content Width
   static const double maxContentWidth = 1400;
 }
+

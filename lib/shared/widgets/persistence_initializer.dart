@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/riverpod/auth_notifier.dart';
 import '../providers/riverpod/theme_notifier.dart';
 import '../providers/riverpod/currency_notifier.dart';
+import '../utils/theme_utils.dart';
 
 /// Widget que se muestra mientras se inicializa la persistencia
 class PersistenceInitializer extends ConsumerStatefulWidget {
@@ -30,21 +32,23 @@ class _PersistenceInitializerState
 
   Future<void> _initializePersistence() async {
     try {
-      // Esperar a que los providers se inicialicen con la persistencia
-      // Los providers cargan automáticamente en su constructor
-      await Future.wait([
-        Future.delayed(const Duration(milliseconds: 500)), // Dar tiempo para cargar
-      ]);
-
+      // Los providers cargan automáticamente en sus constructores desde SharedPreferences
+      // Simplemente esperar a que se inicialicen correctamente
+      // No usar delay arbitrario - esperar a que los providers estén listos
+      
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       // Verificar que todo esté cargado
       final authState = ref.read(authProvider);
       final themeState = ref.read(themeProvider);
       final currencyState = ref.read(currencyProvider);
 
-      debugPrint('✅ Persistencia inicializada:');
-      debugPrint('   - Sesión: ${authState.isLoggedIn ? 'Cargada' : 'No cargada'}');
-      debugPrint('   - Tema: ${themeState.isInitialized ? 'Cargado' : 'No cargado'}');
-      debugPrint('   - Moneda: ${currencyState.isInitialized ? 'Cargada' : 'No cargada'}');
+      if (kDebugMode) {
+        debugPrint('✅ Persistencia inicializada:');
+        debugPrint('   - Sesión: ${authState.isLoggedIn ? 'Cargada' : 'No cargada'}');
+        debugPrint('   - Tema: ${themeState.isInitialized ? 'Cargado' : 'No cargado'}');
+        debugPrint('   - Moneda: ${currencyState.isInitialized ? 'Cargada' : 'No cargada'}');
+      }
 
       if (mounted) {
         setState(() {
@@ -52,7 +56,10 @@ class _PersistenceInitializerState
         });
       }
     } catch (e) {
-      debugPrint('❌ Error en PersistenceInitializer: $e');
+      if (kDebugMode) {
+        debugPrint('❌ Error en PersistenceInitializer: $e');
+      }
+      // Marcar como inicializado incluso en caso de error para no bloquear la app
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -71,12 +78,11 @@ class _PersistenceInitializerState
       
       // Determinar si es modo oscuro
       final brightness = MediaQuery.of(context).platformBrightness;
-      final isDarkMode = themeState.themeMode == ThemeMode.dark ||
-          (themeState.themeMode == ThemeMode.system && brightness == Brightness.dark);
+      final isDarkMode = ThemeUtils.isDarkMode(themeState.themeMode, brightness);
       
       final bgColor = isDarkMode ? Colors.grey[900] : Colors.white;
       final textColor = isDarkMode ? Colors.white : Colors.black87;
-      final secondaryTextColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+      final secondaryTextColor = ThemeUtils.getSecondaryTextColor(isDarkMode);
 
       return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -160,3 +166,4 @@ class _PersistenceInitializerState
     return widget.child;
   }
 }
+

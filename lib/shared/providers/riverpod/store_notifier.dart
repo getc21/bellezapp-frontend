@@ -72,7 +72,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
           await _selectInitialStore();
         } else {
           if (kDebugMode) {
-            print('🔵 StoreNotifier: Tiendas cargadas sin auto-selección');
+            if (kDebugMode) debugPrint('🔵 StoreNotifier: Tiendas cargadas sin auto-selección');
           }
         }
       } else {
@@ -116,7 +116,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
       await _saveSelectedStore(state.stores.first);
     } catch (e) {
       if (kDebugMode) {
-        print('Error en _selectInitialStore: $e');
+        if (kDebugMode) debugPrint('Error en _selectInitialStore: $e');
       }
       if (state.stores.isNotEmpty) {
         state = state.copyWith(currentStore: state.stores.first);
@@ -131,7 +131,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
       await prefs.setString('selected_store_id', store['_id'].toString());
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando tienda seleccionada: $e');
+        if (kDebugMode) debugPrint('Error guardando tienda seleccionada: $e');
       }
     }
   }
@@ -152,7 +152,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
   void _onStoreChanged() {
     // Esto puede ser usado para refrescar otros datos
     if (kDebugMode) {
-      print('🔵 Store changed to ${state.currentStore?['name']}');
+      if (kDebugMode) debugPrint('🔵 Store changed to ${state.currentStore?['name']}');
     }
   }
 
@@ -208,7 +208,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
 
       if (result['success']) {
         if (kDebugMode) {
-          print('✅ Tienda creada: $name');
+          if (kDebugMode) debugPrint('✅ Tienda creada: $name');
         }
         // Recargar lista de tiendas para asegurar datos completos
         await loadStores(autoSelect: false);
@@ -226,7 +226,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
         errorMessage: 'Error de conexión: $e',
       );
       if (kDebugMode) {
-        print('❌ Error creando tienda: $e');
+        if (kDebugMode) debugPrint('❌ Error creando tienda: $e');
       }
       return false;
     }
@@ -254,7 +254,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
 
       if (result['success']) {
         if (kDebugMode) {
-          print('✅ Tienda actualizada: $name');
+          if (kDebugMode) debugPrint('✅ Tienda actualizada: $name');
         }
         // Recargar lista de tiendas para asegurar datos completos
         await loadStores(autoSelect: false);
@@ -272,7 +272,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
         errorMessage: 'Error de conexión: $e',
       );
       if (kDebugMode) {
-        print('❌ Error actualizando tienda: $e');
+        if (kDebugMode) debugPrint('❌ Error actualizando tienda: $e');
       }
       return false;
     }
@@ -288,7 +288,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
 
       if (result['success']) {
         if (kDebugMode) {
-          print('✅ Tienda eliminada');
+          if (kDebugMode) debugPrint('✅ Tienda eliminada');
         }
         // Recargar lista de tiendas para sincronizar estado
         await loadStores(autoSelect: true);
@@ -306,7 +306,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
         errorMessage: 'Error de conexión: $e',
       );
       if (kDebugMode) {
-        print('❌ Error eliminando tienda: $e');
+        if (kDebugMode) debugPrint('❌ Error eliminando tienda: $e');
       }
       return false;
     }
@@ -317,3 +317,4 @@ class StoreNotifier extends StateNotifier<StoreState> {
 final storeProvider = StateNotifierProvider<StoreNotifier, StoreState>((ref) {
   return StoreNotifier(ref);
 });
+

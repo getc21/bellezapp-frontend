@@ -320,3 +320,4 @@ class ProductNotifier extends StateNotifier<ProductState> {
 final productProvider = StateNotifierProvider<ProductNotifier, ProductState>((ref) {
   return ProductNotifier(ref);
 });
+

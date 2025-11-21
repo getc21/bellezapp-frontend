@@ -176,3 +176,4 @@ class PageOptimizationConfig {
     this.enablePagination = true,
   });
 }
+

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../providers/riverpod/theme_notifier.dart';
+import '../utils/theme_utils.dart';
 
 class LoadingIndicator extends ConsumerWidget {
   final String? message;
@@ -22,11 +23,10 @@ class LoadingIndicator extends ConsumerWidget {
     final currentTheme = themeNotifier.currentTheme;
     
     final brightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = themeState.themeMode == ThemeMode.dark ||
-        (themeState.themeMode == ThemeMode.system && brightness == Brightness.dark);
+    final isDarkMode = ThemeUtils.isDarkMode(themeState.themeMode, brightness);
     
     final displayColor = color ?? currentTheme.primaryColor;
-    final textColor = isDarkMode ? Colors.grey[300] : Colors.grey[700];
+    final textColor = ThemeUtils.getSecondaryTextColor(isDarkMode);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -52,3 +52,4 @@ class LoadingIndicator extends ConsumerWidget {
     );
   }
 }
+

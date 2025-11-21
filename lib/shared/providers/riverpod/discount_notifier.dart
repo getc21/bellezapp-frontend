@@ -270,3 +270,4 @@ class DiscountNotifier extends StateNotifier<DiscountState> {
 final discountProvider = StateNotifierProvider<DiscountNotifier, DiscountState>((ref) {
   return DiscountNotifier(ref);
 });
+

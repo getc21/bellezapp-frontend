@@ -510,3 +510,4 @@ class _LocationsPageState extends ConsumerState<LocationsPage> {
     );
   }
 }
+

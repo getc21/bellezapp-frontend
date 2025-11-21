@@ -436,3 +436,4 @@ class ThemeSettingsPage extends ConsumerWidget {
     );
   }
 }
+

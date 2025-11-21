@@ -168,3 +168,4 @@ final currentCurrencyProvider = Provider<CurrencyModel>((ref) {
     orElse: () => notifier.availableCurrencies.first,
   );
 });
+

@@ -235,3 +235,4 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 final customerProvider = StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {
   return CustomerNotifier(ref);
 });
+

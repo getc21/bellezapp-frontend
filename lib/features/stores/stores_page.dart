@@ -564,3 +564,4 @@ class _StoresPageState extends ConsumerState<StoresPage> {
     );
   }
 }
+

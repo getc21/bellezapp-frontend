@@ -70,3 +70,4 @@ class AppColors {
   static const Color completed = Color(0xFF10B981);
   static const Color cancelled = Color(0xFFEF4444);
 }
+

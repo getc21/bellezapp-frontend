@@ -80,3 +80,4 @@ class Store {
   @override
   int get hashCode => id.hashCode;
 }
+

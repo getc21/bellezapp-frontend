@@ -256,3 +256,4 @@ class UserNotifier extends StateNotifier<UserState> {
 final userProvider = StateNotifierProvider<UserNotifier, UserState>((ref) {
   return UserNotifier(ref);
 });
+
