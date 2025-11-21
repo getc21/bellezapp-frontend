@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/riverpod/auth_notifier.dart';
@@ -38,9 +39,8 @@ class PersistenceService {
   /// Cargar sesión guardada
   static Future<void> _loadSession(WidgetRef ref) async {
     try {
-      final authNotifier = ref.read(authProvider.notifier);
       // El AuthNotifier ya carga la sesión en su constructor
-      // Esperamos a que esté listo
+      ref.read(authProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
       debugPrint('Error cargando sesión: $e');
@@ -50,9 +50,8 @@ class PersistenceService {
   /// Cargar tema guardado
   static Future<void> _loadTheme(WidgetRef ref) async {
     try {
-      final themeNotifier = ref.read(themeProvider.notifier);
       // El ThemeNotifier ya carga el tema en su constructor
-      // Esperamos a que esté listo
+      ref.read(themeProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
       debugPrint('Error cargando tema: $e');
@@ -62,9 +61,8 @@ class PersistenceService {
   /// Cargar moneda guardada
   static Future<void> _loadCurrency(WidgetRef ref) async {
     try {
-      final currencyNotifier = ref.read(currencyProvider.notifier);
       // El CurrencyNotifier ya carga la moneda en su constructor
-      // Esperamos a que esté listo
+      ref.read(currencyProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
       debugPrint('Error cargando moneda: $e');
