@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:data_table_2/data_table_2.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/providers/riverpod/category_notifier.dart';
 import '../../shared/providers/riverpod/product_notifier.dart';
+import '../../shared/providers/riverpod/category_form_notifier.dart';
 
 class CategoriesPage extends ConsumerStatefulWidget {
   const CategoriesPage({super.key});
@@ -194,192 +193,187 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   void _showCategoryDialog(BuildContext context, WidgetRef ref, {Map<String, dynamic>? category}) {
     final nameController = TextEditingController(text: category?['name'] ?? '');
     final descriptionController = TextEditingController(text: category?['description'] ?? '');
-    
-    final selectedImage = ValueNotifier<XFile?>(null);
-    final imageBytes = ValueNotifier<String>('');
-    // Backend devuelve 'foto', no 'image'
-    final imagePreview = ValueNotifier<String>(category?['foto'] ?? category?['image'] ?? '');
-    final ImagePicker picker = ImagePicker();
-    final isLoading = ValueNotifier<bool>(false);
     final isEditing = category != null;
-
-    Future<void> pickImage() async {
-      try {
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 800,
-          maxHeight: 800,
-          imageQuality: 85,
-        );
-        
-        if (image != null) {
-          selectedImage.value = image;
-          final bytes = await image.readAsBytes();
-          imageBytes.value = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-          imagePreview.value = imageBytes.value;
-          print('🔵 Image selected: ${image.name}');
-        }
-      } catch (e) {
-        print('❌ Error picking image: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al seleccionar imagen')),
-        );
-      }
-    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
-        content: SizedBox(
-          width: 500,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Vista previa de imagen / Selector
-                ValueListenableBuilder<String>(
-                  valueListenable: imagePreview,
-                  builder: (context, preview, _) => GestureDetector(
-                    onTap: pickImage,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor.withOpacity(0.3),
-                          width: 2,
-                          style: BorderStyle.solid,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final formState = ref.watch(categoryFormProvider(category));
+          final formNotifier = ref.watch(categoryFormProvider(category).notifier);
+
+          return AlertDialog(
+            title: Text(isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Vista previa de imagen / Selector
+                    GestureDetector(
+                      onTap: () async {
+                        try {
+                          await formNotifier.selectImage();
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error al seleccionar imagen')),
+                            );
+                          }
+                        }
+                      },
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            width: 2,
+                            style: BorderStyle.solid,
+                          ),
                         ),
-                      ),
-                      child: preview.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                preview,
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
-                                      const SizedBox(height: 8),
-                                      const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                                    ],
-                                  );
-                                },
+                        child: formState.imagePreview.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  formState.imagePreview,
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                        const SizedBox(height: 8),
+                                        const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                  const SizedBox(height: 8),
+                                  const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                ],
                               ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
-                                const SizedBox(height: 8),
-                                const Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                              ],
-                            ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing24),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category_outlined),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing16),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.description_outlined),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing8),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '* Campos requeridos',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: isLoading,
-            builder: (context, loading, _) => ElevatedButton(
-              onPressed: loading ? null : () async {
-                if (nameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('El nombre es requerido')),
-                  );
-                  return;
-                }
-
-                isLoading.value = true;
-                bool success;
-                if (isEditing) {
-                  print('🔵 Updating category: ${nameController.text}');
-                  success = await ref.read(categoryProvider.notifier).updateCategory(
-                    id: category['_id'],
-                    name: nameController.text.trim(),
-                    description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
-                    imageFile: selectedImage.value,
-                    imageBytes: imageBytes.value,
-                  );
-                } else {
-                  print('🔵 Creating category: ${nameController.text}');
-                  success = await ref.read(categoryProvider.notifier).createCategory(
-                    name: nameController.text.trim(),
-                    description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
-                    imageFile: selectedImage.value,
-                    imageBytes: imageBytes.value,
-                  );
-                }
-
-                isLoading.value = false;
-
-                if (success) {
-                  print('🔵 Closing modal with Navigator.pop...');
-                  Navigator.of(context).pop();
-                  print('🔵 Modal closed');
-                } else {
-                  print('❌ Operation failed, modal stays open');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-              ),
-              child: loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
-                    )
-                  : Text(isEditing ? 'Actualizar' : 'Crear'),
+                    ),
+                    const SizedBox(height: AppSizes.spacing24),
+                    TextField(
+                      controller: nameController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setName,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: descriptionController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setDescription,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.description_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing8),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '* Campos requeridos',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: formState.isLoading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: formState.isLoading
+                    ? null
+                    : () async {
+                        if (nameController.text.trim().isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('El nombre es requerido')),
+                            );
+                          }
+                          return;
+                        }
+
+                        if (context.mounted) {
+                          formNotifier.setLoading(true);
+                        }
+
+                        try {
+                          bool success;
+                          if (isEditing) {
+                            success = await ref.read(categoryProvider.notifier).updateCategory(
+                              id: category['_id'],
+                              name: nameController.text.trim(),
+                              description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
+                              imageFile: formState.selectedImage,
+                              imageBytes: formState.imageBytes,
+                            );
+                          } else {
+                            success = await ref.read(categoryProvider.notifier).createCategory(
+                              name: nameController.text.trim(),
+                              description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
+                              imageFile: formState.selectedImage,
+                              imageBytes: formState.imageBytes,
+                            );
+                          }
+
+                          if (context.mounted) {
+                            formNotifier.setLoading(false);
+                            if (success) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            formNotifier.setLoading(false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: formState.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(isEditing ? 'Actualizar' : 'Crear'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -387,54 +381,73 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   void _confirmDelete(BuildContext context, WidgetRef ref, Map<String, dynamic> category) {
     final categoryName = category['name'] ?? 'esta categoría';
     final categoryId = category['_id'];
-    final isDeleting = ValueNotifier<bool>(false);
-    
+
     if (categoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ID de categoría no válido')),
       );
       return;
     }
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de eliminar la categoría "$categoryName"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: isDeleting,
-            builder: (context, deleting, _) => ElevatedButton(
-              onPressed: deleting ? null : () async {
-                isDeleting.value = true;
-                final success = await ref.read(categoryProvider.notifier).deleteCategory(categoryId);
-                isDeleting.value = false;
-                
-                if (success && context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final formState = ref.watch(categoryFormProvider(null));
+          final formNotifier = ref.watch(categoryFormProvider(null).notifier);
+
+          return AlertDialog(
+            title: const Text('Confirmar eliminación'),
+            content: Text('¿Estás seguro de eliminar la categoría "$categoryName"?'),
+            actions: [
+              TextButton(
+                onPressed: formState.isDeleting ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
               ),
-              child: deleting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Eliminar'),
-            ),
-          ),
-        ],
+              ElevatedButton(
+                onPressed: formState.isDeleting
+                    ? null
+                    : () async {
+                        if (context.mounted) {
+                          formNotifier.setDeleting(true);
+                        }
+
+                        try {
+                          final success = await ref.read(categoryProvider.notifier).deleteCategory(categoryId);
+
+                          if (context.mounted) {
+                            formNotifier.setDeleting(false);
+                            if (success) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            formNotifier.setDeleting(false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: formState.isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Eliminar'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

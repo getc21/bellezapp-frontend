@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:data_table_2/data_table_2.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 import '../../core/constants/app_colors.dart';
+import '../../shared/providers/riverpod/supplier_form_notifier.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/widgets/loading_indicator.dart';
@@ -340,231 +339,229 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
     final phoneController = TextEditingController(text: supplier?['contactPhone'] ?? '');
     final emailController = TextEditingController(text: supplier?['contactEmail'] ?? '');
     final addressController = TextEditingController(text: supplier?['address'] ?? '');
-    
-    final selectedImage = ValueNotifier<XFile?>(null);
-    final imageBytes = ValueNotifier<String>('');
-    final imagePreview = ValueNotifier<String>(supplier?['foto'] ?? '');
-    final ImagePicker picker = ImagePicker();
-    final isLoading = ValueNotifier<bool>(false);
-
-    Future<void> pickImage() async {
-      try {
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 800,
-          maxHeight: 800,
-          imageQuality: 85,
-        );
-        
-        if (image != null) {
-          selectedImage.value = image;
-          // Para web, convertir a base64
-          final bytes = await image.readAsBytes();
-          imageBytes.value = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-          imagePreview.value = imageBytes.value;
-          print('🔵 Image selected: ${image.name}');
-        }
-      } catch (e) {
-        print('❌ Error picking image: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al seleccionar imagen')),
-        );
-      }
-    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(supplier == null ? 'Nuevo Proveedor' : 'Editar Proveedor'),
-        content: SizedBox(
-          width: 500,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Selector de imagen
-                ValueListenableBuilder<String>(
-                  valueListenable: imagePreview,
-                  builder: (context, preview, _) => GestureDetector(
-                    onTap: pickImage,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor.withOpacity(0.3),
-                          width: 2,
-                          style: BorderStyle.solid,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final formState = ref.watch(supplierFormProvider(supplier));
+          final formNotifier = ref.watch(supplierFormProvider(supplier).notifier);
+
+          return AlertDialog(
+            title: Text(supplier == null ? 'Nuevo Proveedor' : 'Editar Proveedor'),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Selector de imagen
+                    GestureDetector(
+                      onTap: () async {
+                        try {
+                          await formNotifier.selectImage();
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error al seleccionar imagen')),
+                            );
+                          }
+                        }
+                      },
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            width: 2,
+                            style: BorderStyle.solid,
+                          ),
                         ),
-                      ),
-                      child: imagePreview.value.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                imagePreview.value,
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
-                                      const SizedBox(height: 8),
-                                      Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                                    ],
-                                  );
-                                },
+                        child: formState.imagePreview.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  formState.imagePreview,
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                        const SizedBox(height: 8),
+                                        Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
+                                  const SizedBox(height: 8),
+                                  Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
+                                ],
                               ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).primaryColor),
-                                const SizedBox(height: 8),
-                                Text('Seleccionar imagen', style: TextStyle(fontSize: 12)),
-                              ],
-                            ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing24),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.business_outlined),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing16),
-                TextField(
-                  controller: contactPersonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Persona de Contacto',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                ),
-                const SizedBox(height: AppSizes.spacing16),
-                TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Teléfono',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: AppSizes.spacing16),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: AppSizes.spacing16),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dirección',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on_outlined),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: AppSizes.spacing8),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '* Campos requeridos',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: isLoading,
-            builder: (context, loading, _) {
-              return ElevatedButton(
-                onPressed: loading ? null : () async {
-              final name = nameController.text.trim();
-
-              if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('El nombre es requerido')),
-                );
-                return;
-              }
-
-              isLoading.value = true; // Activar loading
-              bool success;
-              if (supplier == null) {
-                print('🔵 Creating supplier: $name');
-                success = await ref.read(supplierProvider.notifier).createSupplier(
-                  name: name,
-                  contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
-                  phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                  email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
-                  address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
-                  imageFile: selectedImage.value,
-                  imageBytes: imageBytes.value,
-                );
-              } else {
-                print('🔵 Updating supplier: $name');
-                success = await ref.read(supplierProvider.notifier).updateSupplier(
-                  id: supplier['_id'] ?? supplier['id'] ?? '',
-                  name: name,
-                  contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
-                  phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                  email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
-                  address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
-                  imageFile: selectedImage.value,
-                  imageBytes: imageBytes.value,
-                );
-              }
-
-              isLoading.value = false; // Desactivar loading
-              
-              print('🔵 Operation result: $success');
-              if (success) {
-                print('🔵 Closing modal with Navigator.pop...');
-                Navigator.of(context).pop();
-                print('🔵 Modal closed');
-              } else {
-                print('❌ Operation failed, modal stays open');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: isLoading.value
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    const SizedBox(height: AppSizes.spacing24),
+                    TextField(
+                      controller: nameController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setName,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.business_outlined),
+                      ),
                     ),
-                  )
-                : Text(supplier == null ? 'Crear' : 'Actualizar'),
-              );
-            },
-          ),
-        ],
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: contactPersonController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setContactName,
+                      decoration: const InputDecoration(
+                        labelText: 'Persona de Contacto',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: phoneController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setContactPhone,
+                      decoration: const InputDecoration(
+                        labelText: 'Teléfono',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone_outlined),
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: emailController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setContactEmail,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                    TextField(
+                      controller: addressController,
+                      enabled: !formState.isLoading,
+                      onChanged: formNotifier.setAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Dirección',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: AppSizes.spacing8),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '* Campos requeridos',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: formState.isLoading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: formState.isLoading
+                    ? null
+                    : () async {
+                        final name = nameController.text.trim();
+
+                        if (name.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('El nombre es requerido')),
+                            );
+                          }
+                          return;
+                        }
+
+                        if (context.mounted) {
+                          formNotifier.setLoading(true);
+                        }
+
+                        try {
+                          bool success;
+                          if (supplier == null) {
+                            success = await ref.read(supplierProvider.notifier).createSupplier(
+                              name: name,
+                              contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
+                              phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                              email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+                              address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+                              imageFile: formState.selectedImage,
+                              imageBytes: formState.imageBytes,
+                            );
+                          } else {
+                            success = await ref.read(supplierProvider.notifier).updateSupplier(
+                              id: supplier['_id'] ?? supplier['id'] ?? '',
+                              name: name,
+                              contactPerson: contactPersonController.text.trim().isEmpty ? null : contactPersonController.text.trim(),
+                              phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                              email: emailController.text.trim().isEmpty ? null : emailController.text.trim(),
+                              address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+                              imageFile: formState.selectedImage,
+                              imageBytes: formState.imageBytes,
+                            );
+                          }
+
+                          if (context.mounted) {
+                            formNotifier.setLoading(false);
+                            if (success) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            formNotifier.setLoading(false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: formState.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(supplier == null ? 'Crear' : 'Actualizar'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -574,49 +571,65 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
     String supplierId,
     String supplierName,
   ) {
-    final isDeleting = ValueNotifier<bool>(false);
-    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Proveedor'),
-        content: Text('¿Está seguro de que desea eliminar al proveedor "$supplierName"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: isDeleting,
-            builder: (context, deleting, _) {
-              return ElevatedButton(
-                onPressed: deleting ? null : () async {
-                  isDeleting.value = true;
-                  final success = await ref.read(supplierProvider.notifier).deleteSupplier(supplierId);
-                  isDeleting.value = false;
-              
-              if (success) {
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: isDeleting.value
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text('Eliminar'),
-              );
-            },
-          ),
-        ],
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final formState = ref.watch(supplierFormProvider(null));
+          final formNotifier = ref.watch(supplierFormProvider(null).notifier);
+
+          return AlertDialog(
+            title: const Text('Eliminar Proveedor'),
+            content: Text('¿Está seguro de que desea eliminar al proveedor "$supplierName"?'),
+            actions: [
+              TextButton(
+                onPressed: formState.isDeleting ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: formState.isDeleting
+                    ? null
+                    : () async {
+                        if (context.mounted) {
+                          formNotifier.setDeleting(true);
+                        }
+
+                        try {
+                          final success = await ref.read(supplierProvider.notifier).deleteSupplier(supplierId);
+
+                          if (context.mounted) {
+                            formNotifier.setDeleting(false);
+                            if (success) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            formNotifier.setDeleting(false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: formState.isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Eliminar'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
