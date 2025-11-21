@@ -252,8 +252,8 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.print_outlined, size: 20),
-                  onPressed: () {},
-                  tooltip: 'Imprimir',
+                  onPressed: () => _generateAndPrintPDF(order),
+                  tooltip: 'Imprimir PDF',
                 ),
               ],
             ),
