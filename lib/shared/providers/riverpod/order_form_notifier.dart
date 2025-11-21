@@ -45,7 +45,7 @@ class OrderFormState {
   bool get canSubmit {
     return selectedCustomer != null &&
         cartItems.isNotEmpty &&
-        cartItems.every((item) => (item['quantity'] as num?)?.toInt() ?? 0 > 0);
+        cartItems.every((item) => ((item['quantity'] as num?)?.toInt() ?? 0) > 0);
   }
 
   /// Obtener el total de la orden

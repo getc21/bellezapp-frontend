@@ -102,9 +102,7 @@ class CategoryFormNotifier extends StateNotifier<CategoryFormState> {
 
   /// Limpiar imagen seleccionada
   void clearImage() {
-    // Si hay imagen local, eliminar el archivo temporal
-    state.selectedImage?.delete().ignore();
-
+    // XFile en web es un blob, no requiere limpieza de archivo
     state = state.copyWith(
       selectedImage: null,
       imageBytes: '',
@@ -134,17 +132,14 @@ class CategoryFormNotifier extends StateNotifier<CategoryFormState> {
 
   /// Resetear el formulario
   void reset() {
-    // Limpiar imagen
-    state.selectedImage?.delete().ignore();
-
+    // XFile en web es un blob, no requiere limpieza de archivo
     state = CategoryFormState();
   }
 
   /// Limpiar el estado (para cuando se cierra el dialog)
   @override
   void dispose() {
-    // Eliminar archivo temporal si existe
-    state.selectedImage?.delete().ignore();
+    // XFile en web es un blob, no requiere limpieza de archivo
     super.dispose();
   }
 }
