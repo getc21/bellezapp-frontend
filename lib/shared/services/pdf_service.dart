@@ -693,6 +693,67 @@ class PdfService {
     return await _savePdf(pdf, 'Orden_$shortId');
   }
 
+  static Future<String> generateProductQrLabels({
+    required Map<String, dynamic> product,
+  }) async {
+    final pdf = pw.Document();
+    
+    final productId = product['_id']?.toString() ?? 'N/A';
+    final productName = product['name']?.toString() ?? 'Producto';
+    
+    // 2x2 cm = aproximadamente 56.7 puntos (72 DPI)
+    const qrSize = 56.7;
+    
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(10),
+        build: (pw.Context context) {
+          return pw.Column(
+            children: [
+              pw.Text(
+                'Códigos QR para Imprimir',
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.Text(
+                productName,
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 10),
+              
+              // Grid de 5 columnas x 2 filas = 10 QRs
+              pw.Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: List.generate(10, (index) {
+                  return pw.Container(
+                    width: qrSize,
+                    height: qrSize,
+                    padding: const pw.EdgeInsets.all(2),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(),
+                    ),
+                    child: pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: productId,
+                      width: qrSize - 4,
+                      height: qrSize - 4,
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return await _savePdf(pdf, 'QR_${productName.replaceAll(' ', '_')}');
+  }
+
   static void _downloadFileWeb(String filename, List<int> bytes) {
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);

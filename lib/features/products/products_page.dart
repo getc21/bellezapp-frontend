@@ -15,6 +15,7 @@ import '../../shared/providers/riverpod/category_notifier.dart';
 import '../../shared/providers/riverpod/location_notifier.dart';
 import '../../shared/providers/riverpod/store_notifier.dart';
 import '../../shared/providers/riverpod/supplier_notifier.dart';
+import '../../shared/services/pdf_service.dart';
 
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
@@ -346,6 +347,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.qr_code_2, size: 18),
+                  onPressed: () => _generateQrLabels(product),
+                  tooltip: 'Descargar QR (10 etiquetas)',
+                  color: Theme.of(context).primaryColor,
+                ),
                 IconButton(
                   icon: const Icon(Icons.add_shopping_cart, size: 18),
                   onPressed: () => _showAdjustStockDialog(product),
@@ -1120,5 +1127,47 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _generateQrLabels(Map<String, dynamic> product) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generando PDF con QRs...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await PdfService.generateProductQrLabels(product: product);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF con 10 QRs descargado correctamente'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'Error al generar PDF';
+      
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('path') || errorStr.contains('storage')) {
+        errorMessage = 'No se pudo acceder al almacenamiento. Verifica los permisos.';
+      } else if (errorStr.contains('permission')) {
+        errorMessage = 'Permiso denegado. Habilita permisos de almacenamiento.';
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            duration: const Duration(seconds: 4),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
