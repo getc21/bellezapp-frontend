@@ -265,7 +265,8 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     if (date == null) return 'N/A';
     try {
       final dateTime = date is DateTime ? date : DateTime.parse(date.toString());
-      return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+      final localDateTime = dateTime.toLocal();
+      return DateFormat('dd/MM/yyyy HH:mm').format(localDateTime);
     } catch (e) {
       return 'N/A';
     }

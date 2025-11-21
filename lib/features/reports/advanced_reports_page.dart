@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/providers/riverpod/reports_notifier.dart';
+import '../../shared/providers/riverpod/store_notifier.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/services/pdf_service.dart';
 
@@ -21,6 +22,8 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
   late String _selectedPeriod;
   late int _selectedTab;
 
+  // No store change listener needed outside build
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +38,21 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
         _loadReports();
       }
     });
+
+    // Listen for store changes and reload reports
+    // Use didChangeDependencies for correct context
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // (removed: ref.listen must be in build)
+  }
+
+  @override
+  void dispose() {
+    // No listener cleanup needed
+    super.dispose();
   }
 
   Future<void> _loadReports() async {
@@ -140,6 +158,17 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+        // Listen for store changes and reload reports
+        ref.listen<StoreState>(
+          storeProvider,
+          (previous, next) {
+            if (previous == null || previous.currentStore?['_id'] != next.currentStore?['_id']) {
+              if (mounted) {
+                _loadReports();
+              }
+            }
+          },
+        );
     final reportsState = ref.watch(reportsProvider);
     
     return DashboardLayout(

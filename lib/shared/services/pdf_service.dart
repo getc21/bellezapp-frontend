@@ -5,7 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' as io;
+import 'dart:html' as html;
 
 class PdfService {
   // ...existing code...
@@ -399,16 +401,28 @@ class PdfService {
 
   static Future<String> _savePdf(pw.Document pdf, String filename) async {
     try {
-      final output = await getApplicationDocumentsDirectory();
-      final file = File('${output.path}/$filename.pdf');
-      await file.writeAsBytes(await pdf.save());
-      
-      // Abrir el PDF automáticamente
-      await OpenFilex.open(file.path);
-      
-      return file.path;
+      final pdfBytes = await pdf.save();
+      if (kIsWeb) {
+        _downloadFileWeb('$filename.pdf', pdfBytes);
+        return '$filename.pdf';
+      } else {
+        final output = await getApplicationDocumentsDirectory();
+        final file = io.File('${output.path}/$filename.pdf');
+        await file.writeAsBytes(pdfBytes);
+        await OpenFilex.open(file.path);
+        return file.path;
+      }
     } catch (e) {
       rethrow;
     }
+  }
+
+  static void _downloadFileWeb(String filename, List<int> bytes) {
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', filename)
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 }
