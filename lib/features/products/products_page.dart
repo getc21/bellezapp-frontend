@@ -9,7 +9,7 @@ import 'dart:convert';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/professional_loading.dart';
 import '../../shared/providers/riverpod/product_notifier.dart';
 import '../../shared/providers/riverpod/category_notifier.dart';
 import '../../shared/providers/riverpod/location_notifier.dart';
@@ -128,12 +128,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               if (productState.isLoading) {
                 return SizedBox(
                   height: 600,
-                  child: Card(
-                    child: Center(
-                      child: LoadingIndicator(
-                        message: 'Cargando productos...',
-                      ),
-                    ),
+                  child: ProfessionalLoading(
+                    message: 'Cargando productos...',
+                    rowCount: 8,
+                    columnCount: 7,
                   ),
                 );
               }

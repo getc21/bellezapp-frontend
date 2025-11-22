@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
-import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/professional_loading.dart';
 import '../../shared/providers/riverpod/order_notifier.dart';
 import '../../shared/providers/riverpod/currency_notifier.dart';
 import '../../shared/services/pdf_service.dart';
@@ -98,12 +98,10 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
           if (orderState.isLoading)
             SizedBox(
               height: 600,
-              child: Card(
-                child: Center(
-                  child: LoadingIndicator(
-                    message: 'Cargando órdenes...',
-                  ),
-                ),
+              child: ProfessionalLoading(
+                message: 'Cargando órdenes...',
+                rowCount: 8,
+                columnCount: 6,
               ),
             )
           else if (orderState.orders.isEmpty)
