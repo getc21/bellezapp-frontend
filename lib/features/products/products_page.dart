@@ -29,6 +29,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _hasInitialized = false;
+  int _currentPage = 0;
+  static const int _itemsPerPage = 25;
 
   @override
   void initState() {
@@ -100,7 +102,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     prefixIcon: Icon(Icons.search),
                   ),
                   onChanged: (value) {
-                    setState(() => _searchQuery = value);
+                    setState(() {
+                      _searchQuery = value;
+                      _currentPage = 0; // Reset to first page
+                    });
                   },
                 ),
               ),
@@ -167,26 +172,31 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               }
 
               return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.spacing16),
-                  child: SizedBox(
-                    height: 600,
-                    child: DataTable2(
-                      columnSpacing: 12,
-                      horizontalMargin: 12,
-                      minWidth: 1100,
-                      columns: const [
-                        DataColumn2(label: Text('Producto'), size: ColumnSize.L),
-                        DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
-                        DataColumn2(label: Text('Stock'), size: ColumnSize.S),
-                        DataColumn2(label: Text('Precio Compra'), size: ColumnSize.S),
-                        DataColumn2(label: Text('Precio Venta'), size: ColumnSize.S),
-                        DataColumn2(label: Text('F. Caducidad'), size: ColumnSize.M),
-                        DataColumn2(label: Text('Acciones'), size: ColumnSize.M),
-                      ],
-                      rows: _buildProductRows(productState.products),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSizes.spacing16),
+                        child: DataTable2(
+                          columnSpacing: 12,
+                          horizontalMargin: 12,
+                          minWidth: 1100,
+                          columns: const [
+                            DataColumn2(label: Text('Producto'), size: ColumnSize.L),
+                            DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
+                            DataColumn2(label: Text('Stock'), size: ColumnSize.S),
+                            DataColumn2(label: Text('Precio Compra'), size: ColumnSize.S),
+                            DataColumn2(label: Text('Precio Venta'), size: ColumnSize.S),
+                            DataColumn2(label: Text('F. Caducidad'), size: ColumnSize.M),
+                            DataColumn2(label: Text('Acciones'), size: ColumnSize.M),
+                          ],
+                          rows: _buildProductRows(productState.products),
+                        ),
+                      ),
                     ),
-                  ),
+                    // Pagination Controls
+                    _buildProductPagination(productState.products),
+                  ],
                 ),
               );
             },
@@ -201,6 +211,52 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     return '${currencyNotifier.symbol}${(value as double).toStringAsFixed(2)}';
   }
 
+  Widget _buildProductPagination(List<dynamic> products) {
+    // Calcular páginas basado en búsqueda
+    final filteredProducts = products
+        .where((p) => _searchQuery.isEmpty || 
+                     (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+    
+    final totalPages = (filteredProducts.length / _itemsPerPage).ceil().clamp(1, double.infinity).toInt();
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing16,
+        vertical: AppSizes.spacing12,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Total: ${filteredProducts.length} productos',
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: _currentPage > 0
+                    ? () => setState(() => _currentPage--)
+                    : null,
+              ),
+              Text(
+                'Página ${_currentPage + 1} de $totalPages',
+                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: _currentPage < totalPages - 1
+                    ? () => setState(() => _currentPage++)
+                    : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   List<DataRow2> _buildProductRows(List<dynamic> products) {
       if (kDebugMode) debugPrint(' ProductsPage: _buildProductRows called');
       if (kDebugMode) debugPrint('   - Total products: ${products.length}');
@@ -212,8 +268,15 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         .toList();
 
       if (kDebugMode) debugPrint('   - Filtered products: ${filteredProducts.length}');
+    
+    // Paginación
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage).clamp(0, filteredProducts.length);
+    final paginatedProducts = startIndex < filteredProducts.length 
+        ? filteredProducts.sublist(startIndex, endIndex)
+        : [];
 
-    return filteredProducts.map((product) {
+    return paginatedProducts.map((product) {
       final stock = product['stock'] as int;
       final isLowStock = stock > 0 && stock < 10;
       final isOutOfStock = stock == 0;
