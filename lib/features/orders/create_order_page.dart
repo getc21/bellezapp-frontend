@@ -503,8 +503,6 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
             const Divider(),
             Consumer(
               builder: (context, consumerRef, _) {
-                final formState = consumerRef.watch(orderFormProvider);
-                final items = formState.cartItems;
                 final subtotal = _calculateSubtotal();
                 final total = subtotal;
 
