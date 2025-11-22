@@ -34,7 +34,7 @@ class _OrderDetailPageExampleState extends ConsumerState<OrderDetailPageExample>
     // Cargar el detalle cuando entra a la página
     Future.microtask(() {
       ref.read(orderDetailProvider(widget.orderId).notifier)
-          .loadOrderDetail();
+          .loadItem();
     });
   }
 
@@ -90,7 +90,7 @@ class _ProductDetailPageExampleState
     // Cargar el detalle cuando entra a la página
     Future.microtask(() {
       ref.read(productDetailProvider(widget.productId).notifier)
-          .loadProductDetail();
+          .loadItem();
     });
   }
 
@@ -162,7 +162,7 @@ class _CustomerDetailPageExampleState
     // Cargar el detalle cuando entra a la página
     Future.microtask(() {
       ref.read(customerDetailProvider(widget.customerId).notifier)
-          .loadCustomerDetail();
+          .loadItem();
     });
   }
 

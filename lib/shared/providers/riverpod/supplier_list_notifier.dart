@@ -1,78 +1,22 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/cache_service.dart';
+import 'generic_list_notifier.dart';
+import 'generic_list_state.dart';
 
-/// State para lista de suppliers
-class SupplierListState {
-  final List<Map<String, dynamic>>? suppliers;
-  final bool isLoading;
-  final String? error;
-  final DateTime? lastUpdated;
+/// SupplierListNotifier usando herencia de EntityListNotifier
+/// Reduce 65 líneas a 20 líneas (69% reducción)
+class SupplierListNotifier extends EntityListNotifier<Map<String, dynamic>> {
+  SupplierListNotifier() : super(cacheKey: 'supplier_list');
 
-  const SupplierListState({
-    this.suppliers,
-    this.isLoading = false,
-    this.error,
-    this.lastUpdated,
-  });
-
-  SupplierListState copyWith({
-    List<Map<String, dynamic>>? suppliers,
-    bool? isLoading,
-    String? error,
-    DateTime? lastUpdated,
-  }) =>
-      SupplierListState(
-        suppliers: suppliers ?? this.suppliers,
-        isLoading: isLoading ?? this.isLoading,
-        error: error ?? this.error,
-        lastUpdated: lastUpdated ?? this.lastUpdated,
-      );
-}
-
-/// Notifier con caching
-class SupplierListNotifier extends StateNotifier<SupplierListState> {
-  final CacheService _cache = CacheService();
-
-  SupplierListNotifier() : super(const SupplierListState());
-
-  Future<void> loadSuppliers({bool forceRefresh = false}) async {
-    const cacheKey = 'supplier_list';
-
-    if (!forceRefresh) {
-      final cached = _cache.get<List<Map<String, dynamic>>>(cacheKey);
-      if (cached != null) {
-        if (kDebugMode) print('✅ Suppliers obtenidos del caché');
-        state = state.copyWith(suppliers: cached);
-        return;
-      }
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final suppliers = <Map<String, dynamic>>[
-        {'id': '1', 'name': 'Supplier 1', 'city': 'Madrid'},
-      ];
-
-      _cache.set(cacheKey, suppliers, ttl: const Duration(minutes: 5));
-
-      if (kDebugMode) print('✅ ${suppliers.length} suppliers cacheados');
-
-      state = state.copyWith(suppliers: suppliers, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
-  }
-
-  void invalidateSupplierList() {
-    _cache.invalidate('supplier_list');
-    if (kDebugMode) print('🗑️ Cache de suppliers invalidado');
+  @override
+  Future<List<Map<String, dynamic>>> fetchItems() async {
+    return <Map<String, dynamic>>[
+      {'id': '1', 'name': 'Supplier 1', 'city': 'Madrid'},
+    ];
   }
 }
 
 /// Provider global
 final supplierListProvider =
-    StateNotifierProvider<SupplierListNotifier, SupplierListState>(
+    StateNotifierProvider<SupplierListNotifier, GenericListState<Map<String, dynamic>>>(
   (ref) => SupplierListNotifier(),
 );

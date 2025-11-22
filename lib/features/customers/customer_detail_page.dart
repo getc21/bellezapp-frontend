@@ -24,7 +24,7 @@ class _CustomerDetailPageState extends ConsumerState<CustomerDetailPage> {
     Future.microtask(() {
       ref
           .read(customerDetailProvider(widget.customerId).notifier)
-          .loadCustomerDetail();
+          .loadItem();
     });
   }
 
@@ -112,7 +112,7 @@ class _CustomerDetailContentState
     // Load order history - refresh the customer detail
     ref
         .read(customerDetailProvider(widget.customerId).notifier)
-        .loadCustomerDetail(forceRefresh: true);
+        .loadItem();
   }
 
   @override
@@ -284,8 +284,8 @@ class _CustomerDetailContentState
           ),
 
           // Orders List
-          if (customerState.customer?['orders'] != null &&
-              (customerState.customer!['orders'] as List).isNotEmpty)
+          if (customerState.item?['orders'] != null &&
+              (customerState.item!['orders'] as List).isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -295,10 +295,10 @@ class _CustomerDetailContentState
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: List.generate(
-                      (customerState.customer!['orders'] as List).length,
+                      (customerState.item!['orders'] as List).length,
                       (index) {
                         final order =
-                            customerState.customer!['orders'][index];
+                            customerState.item!['orders'][index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _OrderCard(order: order),

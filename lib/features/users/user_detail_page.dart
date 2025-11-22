@@ -20,7 +20,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(userDetailProvider(widget.userId).notifier).load(widget.userId);
+      ref.read(userDetailProvider(widget.userId).notifier).loadItem();
     });
   }
 

@@ -20,7 +20,7 @@ class _LocationDetailPageState extends ConsumerState<LocationDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(locationDetailProvider(widget.locationId).notifier).load(widget.locationId);
+      ref.read(locationDetailProvider(widget.locationId).notifier).loadItem();
     });
   }
 

@@ -23,7 +23,7 @@ class _CategoryDetailPageState extends ConsumerState<CategoryDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(categoryDetailProvider(widget.categoryId).notifier).load(widget.categoryId);
+      ref.read(categoryDetailProvider(widget.categoryId).notifier).loadItem();
     });
   }
 

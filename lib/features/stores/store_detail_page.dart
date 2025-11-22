@@ -20,7 +20,7 @@ class _StoreDetailPageState extends ConsumerState<StoreDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(storeDetailProvider(widget.storeId).notifier).load(widget.storeId);
+      ref.read(storeDetailProvider(widget.storeId).notifier).loadItem();
     });
   }
 

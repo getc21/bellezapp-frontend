@@ -20,7 +20,7 @@ class _ReportDetailPageState extends ConsumerState<ReportDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(reportDetailProvider(widget.reportId).notifier).load(widget.reportId);
+      ref.read(reportDetailProvider(widget.reportId).notifier).loadItem();
     });
   }
 

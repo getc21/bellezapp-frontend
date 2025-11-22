@@ -23,7 +23,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     super.initState();
     // Cargar detalle cuando entra a la página
     Future.microtask(() {
-      ref.read(orderDetailProvider(widget.orderId).notifier).loadOrderDetail();
+      ref.read(orderDetailProvider(widget.orderId).notifier).loadItem();
     });
   }
 

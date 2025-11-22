@@ -27,7 +27,7 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
     super.initState();
     // Cargar detalle cuando entra a la página
     Future.microtask(() {
-      ref.read(supplierDetailProvider(widget.supplierId).notifier).load(widget.supplierId);
+      ref.read(supplierDetailProvider(widget.supplierId).notifier).loadItem();
     });
   }
 

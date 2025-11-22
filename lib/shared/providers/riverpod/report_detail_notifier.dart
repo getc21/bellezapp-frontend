@@ -1,53 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'generic_detail_notifier.dart';
+import 'generic_detail_state.dart';
 
-class ReportDetailState {
-  final Map<String, dynamic>? report;
-  final bool isLoading;
-  final String? error;
-  final DateTime? lastUpdated;
+/// ReportDetailNotifier usando herencia de EntityDetailNotifier
+/// Reduce 50+ líneas a 22 líneas (56% reducción)
+class ReportDetailNotifier extends EntityDetailNotifier<Map<String, dynamic>> {
+  ReportDetailNotifier(String reportId)
+      : super(itemId: reportId, cacheKeyPrefix: 'report_detail');
 
-  const ReportDetailState({
-    this.report,
-    this.isLoading = false,
-    this.error,
-    this.lastUpdated,
-  });
-
-  ReportDetailState copyWith({
-    Map<String, dynamic>? report,
-    bool? isLoading,
-    String? error,
-    DateTime? lastUpdated,
-  }) =>
-      ReportDetailState(
-        report: report ?? this.report,
-        isLoading: isLoading ?? this.isLoading,
-        error: error ?? this.error,
-        lastUpdated: lastUpdated ?? this.lastUpdated,
-      );
-}
-
-class ReportDetailNotifier extends StateNotifier<ReportDetailState> {
-  ReportDetailNotifier() : super(const ReportDetailState());
-
-  Future<void> load(String id) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final report = {'id': id, 'name': 'Report $id'};
-      state = state.copyWith(
-        report: report,
-        isLoading: false,
-        lastUpdated: DateTime.now(),
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+  @override
+  Future<Map<String, dynamic>> fetchItem(String reportId) async {
+    return {'id': reportId, 'name': 'Report $reportId'};
   }
 }
 
 final reportDetailProvider = StateNotifierProvider.family<
     ReportDetailNotifier,
-    ReportDetailState,
-    String>(
-  (ref, id) => ReportDetailNotifier(),
+    GenericDetailState<Map<String, dynamic>>,
+    String
+>(
+  (ref, id) => ReportDetailNotifier(id),
 );

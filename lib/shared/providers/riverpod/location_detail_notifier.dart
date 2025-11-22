@@ -1,53 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'generic_detail_notifier.dart';
+import 'generic_detail_state.dart';
 
-class LocationDetailState {
-  final Map<String, dynamic>? location;
-  final bool isLoading;
-  final String? error;
-  final DateTime? lastUpdated;
+/// LocationDetailNotifier usando herencia de EntityDetailNotifier
+/// Reduce 50+ líneas a 22 líneas (56% reducción)
+class LocationDetailNotifier extends EntityDetailNotifier<Map<String, dynamic>> {
+  LocationDetailNotifier(String locationId)
+      : super(itemId: locationId, cacheKeyPrefix: 'location_detail');
 
-  const LocationDetailState({
-    this.location,
-    this.isLoading = false,
-    this.error,
-    this.lastUpdated,
-  });
-
-  LocationDetailState copyWith({
-    Map<String, dynamic>? location,
-    bool? isLoading,
-    String? error,
-    DateTime? lastUpdated,
-  }) =>
-      LocationDetailState(
-        location: location ?? this.location,
-        isLoading: isLoading ?? this.isLoading,
-        error: error ?? this.error,
-        lastUpdated: lastUpdated ?? this.lastUpdated,
-      );
-}
-
-class LocationDetailNotifier extends StateNotifier<LocationDetailState> {
-  LocationDetailNotifier() : super(const LocationDetailState());
-
-  Future<void> load(String id) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final location = {'id': id, 'name': 'Location $id'};
-      state = state.copyWith(
-        location: location,
-        isLoading: false,
-        lastUpdated: DateTime.now(),
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+  @override
+  Future<Map<String, dynamic>> fetchItem(String locationId) async {
+    return {'id': locationId, 'name': 'Location $locationId'};
   }
 }
 
 final locationDetailProvider = StateNotifierProvider.family<
     LocationDetailNotifier,
-    LocationDetailState,
-    String>(
-  (ref, id) => LocationDetailNotifier(),
+    GenericDetailState<Map<String, dynamic>>,
+    String
+>(
+  (ref, id) => LocationDetailNotifier(id),
 );

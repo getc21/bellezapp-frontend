@@ -21,7 +21,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     super.initState();
     // Load product detail when page is initialized
     Future.microtask(() {
-      ref.read(productDetailProvider(widget.productId).notifier).loadProductDetail();
+      ref.read(productDetailProvider(widget.productId).notifier).loadItem();
     });
   }
 
