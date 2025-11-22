@@ -27,7 +27,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     super.initState();
     _scrollController = ScrollController();
     
-    // Cargar órdenes cuando se abre la página
+    // Cargar órdenes cuando se abre la página (sin forzar recarga)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(orderProvider.notifier).loadOrdersForCurrentStore();
     });
@@ -36,7 +36,8 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recargar órdenes cuando volvemos a esta página desde otra ruta
+    // Actualizar órdenes en background cuando volvemos (sin bloquear UI)
+    // Usa caché si existe, carga nuevos datos en background
     ref.read(orderProvider.notifier).loadOrdersForCurrentStore(forceRefresh: true);
   }
 

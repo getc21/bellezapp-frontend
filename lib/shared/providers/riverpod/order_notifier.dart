@@ -89,17 +89,18 @@ class OrderNotifier extends StateNotifier<OrderState> {
         endDate: endDate,
       );
 
-      // Intentar obtener del caché si no es forzado
-      if (!forceRefresh) {
-        final cachedOrders = _cache.get<List<Map<String, dynamic>>>(cacheKey);
-        if (cachedOrders != null) {
-          state = state.copyWith(orders: cachedOrders, isLoading: false);
+      // SIEMPRE intentar obtener del caché primero (incluso si forceRefresh)
+      final cachedOrders = _cache.get<List<Map<String, dynamic>>>(cacheKey);
+      if (cachedOrders != null && !state.isLoading) {
+        // Mostrar datos en caché inmediatamente
+        state = state.copyWith(orders: cachedOrders, isLoading: false, errorMessage: '');
+        // Si no es forzado, terminar aquí
+        if (!forceRefresh) {
           return;
         }
-      }
-
-      // Si no está en caché, mostrar loading
-      if (!state.isLoading) {
+        // Si es forzado, continuar cargando en background pero sin mostrar loading
+      } else if (!state.isLoading && cachedOrders == null) {
+        // Solo mostrar loading si no hay caché
         state = state.copyWith(isLoading: true, errorMessage: '');
       }
 

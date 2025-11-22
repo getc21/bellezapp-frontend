@@ -80,16 +80,18 @@ class ProductNotifier extends StateNotifier<ProductState> {
         lowStock: lowStock,
       );
 
-      // Intentar caché primero
-      if (!forceRefresh) {
-        final cached = _cache.get<List<Map<String, dynamic>>>(cacheKey);
-        if (cached != null) {
-          state = state.copyWith(products: cached, isLoading: false);
+      // SIEMPRE intentar obtener del caché primero (incluso si forceRefresh)
+      final cached = _cache.get<List<Map<String, dynamic>>>(cacheKey);
+      if (cached != null && !state.isLoading) {
+        // Mostrar datos en caché inmediatamente
+        state = state.copyWith(products: cached, isLoading: false, errorMessage: '');
+        // Si no es forzado, terminar aquí
+        if (!forceRefresh) {
           return;
         }
-      }
-
-      if (!state.isLoading) {
+        // Si es forzado, continuar cargando en background pero sin mostrar loading
+      } else if (!state.isLoading && cached == null) {
+        // Solo mostrar loading si no hay caché
         state = state.copyWith(isLoading: true, errorMessage: '');
       }
 
