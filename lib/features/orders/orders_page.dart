@@ -38,7 +38,10 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     super.didChangeDependencies();
     // Actualizar órdenes en background cuando volvemos (sin bloquear UI)
     // Usa caché si existe, carga nuevos datos en background
-    ref.read(orderProvider.notifier).loadOrdersForCurrentStore(forceRefresh: true);
+    // Envuelto en Future para no modificar el provider durante la construcción
+    Future(() {
+      ref.read(orderProvider.notifier).loadOrdersForCurrentStore(forceRefresh: true);
+    });
   }
 
   @override
