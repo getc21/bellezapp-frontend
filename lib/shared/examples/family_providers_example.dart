@@ -49,9 +49,9 @@ class _OrderDetailPageExampleState extends ConsumerState<OrderDetailPageExample>
           ? const LoadingWidget()
           : orderDetailState.error != null
               ? ErrorWidget(error: orderDetailState.error!)
-              : orderDetailState.order != null
+              : orderDetailState.item != null
                   ? OrderDetailContent(
-                      order: orderDetailState.order!,
+                      order: orderDetailState.item!,
                       onStatusChange: (newStatus) async {
                         final success = await ref
                             .read(
@@ -106,9 +106,9 @@ class _ProductDetailPageExampleState
           ? const LoadingWidget()
           : productDetailState.error != null
               ? ErrorWidget(error: productDetailState.error!)
-              : productDetailState.product != null
+              : productDetailState.item != null
                   ? ProductDetailContent(
-                      product: productDetailState.product!,
+                      product: productDetailState.item!,
                       onPriceChange: (newPrice) async {
                         final success = await ref
                             .read(
@@ -178,9 +178,9 @@ class _CustomerDetailPageExampleState
           ? const LoadingWidget()
           : customerDetailState.error != null
               ? ErrorWidget(error: customerDetailState.error!)
-              : customerDetailState.customer != null
+              : customerDetailState.item != null
                   ? CustomerDetailContent(
-                      customer: customerDetailState.customer!,
+                      customer: customerDetailState.item!,
                       onInfoChange: (name, email, phone, address) async {
                         final success = await ref
                             .read(customerDetailProvider(widget.customerId)

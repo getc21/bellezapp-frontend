@@ -8,7 +8,7 @@ import 'product_detail_notifier.dart';
 /// Obtener solo el producto (sin estado de carga/error)
 final productSelector = Provider.family<Map<String, dynamic>?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product;
+  return state.item;
 });
 
 /// Obtener solo si está cargando
@@ -26,56 +26,56 @@ final productErrorSelector = Provider.family<String?, String>((ref, productId) {
 /// Obtener solo el nombre del producto
 final productNameSelector = Provider.family<String?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['name'] as String?;
+  return state.item?['name'] as String?;
 });
 
 /// Obtener solo el precio del producto
 final productPriceSelector = Provider.family<double?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  final price = state.product?['salePrice'];
+  final price = state.item?['salePrice'];
   return price is double ? price : (price is int ? price.toDouble() : null);
 });
 
 /// Obtener solo el stock del producto
 final productStockSelector = Provider.family<int?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['stock'] as int?;
+  return state.item?['stock'] as int?;
 });
 
 /// Obtener solo la imagen del producto
 final productImageSelector = Provider.family<String?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['image'] as String?;
+  return state.item?['image'] as String?;
 });
 
 /// Obtener solo la descripción del producto
 final productDescriptionSelector = Provider.family<String?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['description'] as String?;
+  return state.item?['description'] as String?;
 });
 
 /// Obtener solo el SKU del producto
 final productSkuSelector = Provider.family<String?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['sku'] as String?;
+  return state.item?['sku'] as String?;
 });
 
 /// Obtener solo el proveedor del producto
 final productSupplierSelector = Provider.family<Map<String, dynamic>?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['supplier'] as Map<String, dynamic>?;
+  return state.item?['supplier'] as Map<String, dynamic>?;
 });
 
 /// Obtener solo la categoría del producto
 final productCategorySelector = Provider.family<Map<String, dynamic>?, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  return state.product?['category'] as Map<String, dynamic>?;
+  return state.item?['category'] as Map<String, dynamic>?;
 });
 
 /// Obtener si el stock está bajo
 final productLowStockSelector = Provider.family<bool, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  final stock = state.product?['stock'] as int? ?? 0;
+  final stock = state.item?['stock'] as int? ?? 0;
   return stock < 10; // Consideramos bajo stock si es menor a 10
 });
 
@@ -94,16 +94,16 @@ final productSummarySelector = Provider.family<({
 }), String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
   return (
-    name: state.product?['name'] as String?,
-    price: state.product?['salePrice'] as double?,
-    stock: state.product?['stock'] as int?,
-    image: state.product?['image'] as String?,
+    name: state.item?['name'] as String?,
+    price: state.item?['salePrice'] as double?,
+    stock: state.item?['stock'] as int?,
+    image: state.item?['image'] as String?,
   );
 });
 
 /// Observar si el producto está disponible (tiene stock y no hay errores)
 final productAvailableSelector = Provider.family<bool, String>((ref, productId) {
   final state = ref.watch(productDetailProvider(productId));
-  final stock = state.product?['stock'] as int? ?? 0;
+  final stock = state.item?['stock'] as int? ?? 0;
   return stock > 0 && state.error == null;
 });

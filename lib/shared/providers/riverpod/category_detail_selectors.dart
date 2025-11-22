@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './category_detail_notifier.dart';
 
 final categorySelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(categoryDetailProvider(id)).category,
+  (ref, id) => ref.watch(categoryDetailProvider(id)).item,
 );
 
 final isCategoryLoadingSelector = Provider.family<bool, String>(

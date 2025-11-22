@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './location_detail_notifier.dart';
 
 final locationSelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(locationDetailProvider(id)).location,
+  (ref, id) => ref.watch(locationDetailProvider(id)).item,
 );
 
 final isLocationLoadingSelector = Provider.family<bool, String>(

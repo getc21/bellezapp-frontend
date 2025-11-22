@@ -8,7 +8,7 @@ import 'customer_detail_notifier.dart';
 /// Obtener solo el cliente (sin estado de carga/error)
 final customerSelector = Provider.family<Map<String, dynamic>?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer;
+  return state.item;
 });
 
 /// Obtener solo si está cargando
@@ -26,49 +26,49 @@ final customerErrorSelector = Provider.family<String?, String>((ref, customerId)
 /// Obtener solo el nombre del cliente
 final customerNameSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['name'] as String?;
+  return state.item?['name'] as String?;
 });
 
 /// Obtener solo el email del cliente
 final customerEmailSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['email'] as String?;
+  return state.item?['email'] as String?;
 });
 
 /// Obtener solo el teléfono del cliente
 final customerPhoneSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['phone'] as String?;
+  return state.item?['phone'] as String?;
 });
 
 /// Obtener solo la dirección del cliente
 final customerAddressSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['address'] as String?;
+  return state.item?['address'] as String?;
 });
 
 /// Obtener solo la ciudad del cliente
 final customerCitySelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['city'] as String?;
+  return state.item?['city'] as String?;
 });
 
 /// Obtener solo el estado del cliente
 final customerStateSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['state'] as String?;
+  return state.item?['state'] as String?;
 });
 
 /// Obtener solo el código postal del cliente
 final customerZipSelector = Provider.family<String?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['zipCode'] as String?;
+  return state.item?['zipCode'] as String?;
 });
 
 /// Obtener solo el historial de órdenes del cliente
 final customerOrdersSelector = Provider.family<List<Map<String, dynamic>>?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  return state.customer?['orders'] as List<Map<String, dynamic>>?;
+  return state.item?['orders'] as List<Map<String, dynamic>>?;
 });
 
 /// Obtener cantidad total de órdenes
@@ -80,7 +80,7 @@ final customerOrderCountSelector = Provider.family<int, String>((ref, customerId
 /// Obtener gasto total del cliente
 final customerTotalSpentSelector = Provider.family<double?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  final spent = state.customer?['totalSpent'];
+  final spent = state.item?['totalSpent'];
   return spent is double ? spent : (spent is int ? spent.toDouble() : null);
 });
 
@@ -93,7 +93,7 @@ final customerFormattedTotalSelector = Provider.family<String, String>((ref, cus
 /// Obtener fecha de registro del cliente
 final customerRegistrationDateSelector = Provider.family<DateTime?, String>((ref, customerId) {
   final state = ref.watch(customerDetailProvider(customerId));
-  final dateStr = state.customer?['createdAt'] as String?;
+  final dateStr = state.item?['createdAt'] as String?;
   return dateStr != null ? DateTime.tryParse(dateStr) : null;
 });
 

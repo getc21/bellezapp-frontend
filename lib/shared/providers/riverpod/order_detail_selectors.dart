@@ -8,7 +8,7 @@ import 'order_detail_notifier.dart';
 /// Obtener solo la orden (sin estado de carga/error)
 final orderSelector = Provider.family<Map<String, dynamic>?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order;
+  return state.item;
 });
 
 /// Obtener solo si está cargando
@@ -26,44 +26,44 @@ final orderErrorSelector = Provider.family<String?, String>((ref, orderId) {
 /// Obtener solo el número de orden
 final orderNumberSelector = Provider.family<String?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order?['orderNumber'] as String?;
+  return state.item?['orderNumber'] as String?;
 });
 
 /// Obtener solo el estado de la orden
 final orderStatusSelector = Provider.family<String?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order?['status'] as String?;
+  return state.item?['status'] as String?;
 });
 
 /// Obtener solo el total de la orden
 final orderTotalSelector = Provider.family<double?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  final total = state.order?['total'];
+  final total = state.item?['total'];
   return total is double ? total : (total is int ? total.toDouble() : null);
 });
 
 /// Obtener solo los items de la orden
 final orderItemsSelector = Provider.family<List<Map<String, dynamic>>?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order?['items'] as List<Map<String, dynamic>>?;
+  return state.item?['items'] as List<Map<String, dynamic>>?;
 });
 
 /// Obtener solo el cliente de la orden
 final orderCustomerSelector = Provider.family<Map<String, dynamic>?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order?['customer'] as Map<String, dynamic>?;
+  return state.item?['customer'] as Map<String, dynamic>?;
 });
 
 /// Obtener solo la dirección de entrega
 final orderAddressSelector = Provider.family<Map<String, dynamic>?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  return state.order?['shippingAddress'] as Map<String, dynamic>?;
+  return state.item?['shippingAddress'] as Map<String, dynamic>?;
 });
 
 /// Obtener solo la fecha de la orden
 final orderDateSelector = Provider.family<DateTime?, String>((ref, orderId) {
   final state = ref.watch(orderDetailProvider(orderId));
-  final dateStr = state.order?['createdAt'] as String?;
+  final dateStr = state.item?['createdAt'] as String?;
   return dateStr != null ? DateTime.tryParse(dateStr) : null;
 });
 

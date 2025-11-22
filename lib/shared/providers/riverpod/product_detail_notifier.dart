@@ -108,13 +108,3 @@ final productDetailProvider = StateNotifierProvider.family<
 >(
   (ref, productId) => ProductDetailNotifier(ref, productId),
 );
-
-/// Provider con .family para lazy loading de detalles de productos
-/// Uso: ref.watch(productDetailProvider('product_id_123'))
-final productDetailProvider = StateNotifierProvider.family<
-    ProductDetailNotifier,
-    ProductDetailState,
-    String // El ID del producto
->(
-  (ref, productId) => ProductDetailNotifier(ref, productId),
-);

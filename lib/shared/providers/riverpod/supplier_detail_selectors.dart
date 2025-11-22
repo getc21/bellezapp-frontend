@@ -3,7 +3,7 @@ import './supplier_detail_notifier.dart';
 
 /// Selectores para supplier
 final supplierSelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(supplierDetailProvider(id)).supplier,
+  (ref, id) => ref.watch(supplierDetailProvider(id)).item,
 );
 
 final isSupplierLoadingSelector = Provider.family<bool, String>(

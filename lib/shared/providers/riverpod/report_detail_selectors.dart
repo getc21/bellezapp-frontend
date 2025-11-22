@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './report_detail_notifier.dart';
 
 final reportSelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(reportDetailProvider(id)).report,
+  (ref, id) => ref.watch(reportDetailProvider(id)).item,
 );
 
 final isReportLoadingSelector = Provider.family<bool, String>(

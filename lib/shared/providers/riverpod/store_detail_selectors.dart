@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './store_detail_notifier.dart';
 
 final storeSelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(storeDetailProvider(id)).store,
+  (ref, id) => ref.watch(storeDetailProvider(id)).item,
 );
 
 final isStoreLoadingSelector = Provider.family<bool, String>(

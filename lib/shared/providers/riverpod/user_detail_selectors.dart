@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './user_detail_notifier.dart';
 
 final userSelector = Provider.family<Map<String, dynamic>?, String>(
-  (ref, id) => ref.watch(userDetailProvider(id)).user,
+  (ref, id) => ref.watch(userDetailProvider(id)).item,
 );
 
 final isUserLoadingSelector = Provider.family<bool, String>(
