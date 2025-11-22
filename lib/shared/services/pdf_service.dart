@@ -2,12 +2,12 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' as io;
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 
 class PdfService {
   // ...existing code...
@@ -755,12 +755,13 @@ class PdfService {
   }
 
   static void _downloadFileWeb(String filename, List<int> bytes) {
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', filename)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    final blob = web.Blob([(bytes as JSAny)].toJS);
+    final url = web.URL.createObjectURL(blob);
+    final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+    anchor.href = url;
+    anchor.setAttribute('download', filename);
+    anchor.click();
+    web.URL.revokeObjectURL(url);
   }
 }
 
