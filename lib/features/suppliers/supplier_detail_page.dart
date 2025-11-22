@@ -130,8 +130,6 @@ class _SupplierDetailContentState extends ConsumerState<_SupplierDetailContent> 
     // Usar selectores para componentes que necesiten updates
     final name = ref.watch(supplierNameSelector(widget.supplierId));
     final email = ref.watch(supplierEmailSelector(widget.supplierId));
-    final phone = ref.watch(supplierPhoneSelector(widget.supplierId));
-    final city = ref.watch(supplierCitySelector(widget.supplierId));
     final isActive = ref.watch(supplierIsActiveSelector(widget.supplierId));
 
     return SingleChildScrollView(
