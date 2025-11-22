@@ -96,7 +96,7 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
   ];
 
   CurrencyNotifier() : super(CurrencyState(
-    currentCurrencyId: 'usd',
+    currentCurrencyId: 'bob',
     isInitialized: false,
   ));
 
@@ -114,7 +114,7 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
   Future<void> initializeCurrency() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedCurrencyId = prefs.getString('currency_id') ?? 'usd';
+      final savedCurrencyId = prefs.getString('currency_id') ?? 'bob';
 
       state = state.copyWith(
         currentCurrencyId: savedCurrencyId,
