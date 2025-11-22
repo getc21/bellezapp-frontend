@@ -111,12 +111,14 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
           
           // Orders Table
           if (orderState.isLoading)
-            SizedBox(
-              height: 600,
-              child: ProfessionalLoading(
-                message: 'Cargando órdenes...',
-                rowCount: 8,
-                columnCount: 6,
+            Card(
+              child: SizedBox(
+                height: 600,
+                child: ProfessionalLoading(
+                  message: 'Cargando órdenes...',
+                  rowCount: 8,
+                  columnCount: 6,
+                ),
               ),
             )
           else if (orderState.orders.isEmpty)

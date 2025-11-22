@@ -131,12 +131,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       if (kDebugMode) debugPrint('   - products length: ${productState.products.length}');
               
               if (productState.isLoading) {
-                return SizedBox(
-                  height: 600,
-                  child: ProfessionalLoading(
-                    message: 'Cargando productos...',
-                    rowCount: 8,
-                    columnCount: 7,
+                return Card(
+                  child: SizedBox(
+                    height: 600,
+                    child: ProfessionalLoading(
+                      message: 'Cargando productos...',
+                      rowCount: 8,
+                      columnCount: 7,
+                    ),
                   ),
                 );
               }
