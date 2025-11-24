@@ -305,12 +305,14 @@ class _StoresPageState extends ConsumerState<StoresPage> {
 
   void _switchStore(Map<String, dynamic> store) {
     ref.read(storeProvider.notifier).selectStore(store);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Cambió a tienda: ${store['name']}'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cambió a tienda: ${store['name']}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _showStoreDialog(BuildContext context, Map<String, dynamic>? store) {
@@ -448,9 +450,9 @@ class _StoresPageState extends ConsumerState<StoresPage> {
 
                       setState(() => isLoading = false);
 
-                      if (success && context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
+                      if (success && dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
                           SnackBar(
                             content: Text(
                               isEdit 
@@ -486,7 +488,7 @@ class _StoresPageState extends ConsumerState<StoresPage> {
   void _confirmDelete(Map<String, dynamic> store) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.error),
@@ -542,7 +544,7 @@ class _StoresPageState extends ConsumerState<StoresPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               final success = await ref.read(storeProvider.notifier).deleteStore(store['_id']);
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

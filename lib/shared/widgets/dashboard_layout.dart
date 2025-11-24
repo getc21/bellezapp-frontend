@@ -90,19 +90,14 @@ class DashboardLayout extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(AppSizes.spacing24),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppColors.border),
-              ),
+              border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Configuración de Temas',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -121,10 +116,7 @@ class DashboardLayout extends ConsumerWidget {
                   // Modo de tema
                   const Text(
                     'Modo de Visualización',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: AppSizes.spacing16),
                   Card(
@@ -170,21 +162,19 @@ class DashboardLayout extends ConsumerWidget {
                   // Temas disponibles
                   const Text(
                     'Temas Disponibles',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: AppSizes.spacing16),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.2,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.2,
+                        ),
                     itemCount: themeNotifier.availableThemes.length,
                     itemBuilder: (context, index) {
                       final theme = themeNotifier.availableThemes[index];
@@ -203,10 +193,7 @@ class DashboardLayout extends ConsumerWidget {
                   // Selector de Moneda
                   const Text(
                     'Configuración de Moneda',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: AppSizes.spacing16),
                   Card(
@@ -226,7 +213,9 @@ class DashboardLayout extends ConsumerWidget {
                           DropdownButton<String>(
                             value: currencyState.currentCurrencyId,
                             isExpanded: true,
-                            items: currencyNotifier.availableCurrencies.map((currency) {
+                            items: currencyNotifier.availableCurrencies.map((
+                              currency,
+                            ) {
                               return DropdownMenuItem(
                                 value: currency.id,
                                 child: Row(
@@ -241,8 +230,10 @@ class DashboardLayout extends ConsumerWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             currency.name,
@@ -292,9 +283,7 @@ class DashboardLayout extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(AppSizes.spacing24),
             decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppColors.border),
-              ),
+              border: Border(top: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -322,30 +311,21 @@ class DashboardLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDesktop = MediaQuery.of(context).size.width >= AppSizes.tabletBreakpoint;
-    final isSidebarCollapsed = ref.watch(dashboardCollapseProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSidebarCollapsed = screenWidth < AppSizes.tabletBreakpoint
+        ? true
+        : ref.watch(dashboardCollapseProvider);
 
     return Scaffold(
       body: Row(
         children: [
-          // Sidebar
-          if (isDesktop)
-            _buildSidebar(context, ref, isSidebarCollapsed)
-          else
-            NavigationRail(
-              selectedIndex: _getSelectedIndex(),
-              onDestinationSelected: (index) => _onDestinationSelected(index),
-              labelType: NavigationRailLabelType.all,
-              destinations: _getNavigationDestinations(ref),
-            ),
-          
+          _buildSidebar(context, ref, isSidebarCollapsed),
           // Main Content
           Expanded(
             child: Column(
               children: [
                 // Top Bar
                 _buildTopBar(context, ref),
-                
                 // Content Area
                 Expanded(
                   child: Container(
@@ -355,7 +335,9 @@ class DashboardLayout extends ConsumerWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           AppColors.background,
-                          Theme.of(context).primaryColor.withValues(alpha: 0.03),
+                          Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.03),
                         ],
                       ),
                     ),
@@ -378,16 +360,21 @@ class DashboardLayout extends ConsumerWidget {
     );
   }
 
-  Widget _buildSidebar(BuildContext context, WidgetRef ref, bool isSidebarCollapsed) {
+  Widget _buildSidebar(
+    BuildContext context,
+    WidgetRef ref,
+    bool isSidebarCollapsed,
+  ) {
     final authState = ref.watch(authProvider);
     final isAdmin = authState.currentUser?['role'] == 'admin';
-    
+
     return _SidebarWidget(
       isAdmin: isAdmin,
       currentRoute: currentRoute,
       isSidebarCollapsed: isSidebarCollapsed,
       onToggle: () {
-        ref.read(dashboardCollapseProvider.notifier).state = !isSidebarCollapsed;
+        ref.read(dashboardCollapseProvider.notifier).state =
+            !isSidebarCollapsed;
       },
     );
   }
@@ -396,7 +383,7 @@ class DashboardLayout extends ConsumerWidget {
     final storeState = ref.watch(storeProvider);
     final authState = ref.watch(authProvider);
     final isAdmin = authState.currentUser?['role'] == 'admin';
-    
+
     return Container(
       height: AppSizes.appBarHeight,
       decoration: BoxDecoration(
@@ -408,9 +395,7 @@ class DashboardLayout extends ConsumerWidget {
             Theme.of(context).primaryColor.withValues(alpha: 0.08),
           ],
         ),
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
+        border: const Border(bottom: BorderSide(color: AppColors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
       child: Row(
@@ -424,7 +409,7 @@ class DashboardLayout extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSizes.spacing24),
-          
+
           // ⭐ SELECTOR DE TIENDA - SOLO PARA ADMINISTRADORES
           if (isAdmin && storeState.stores.isNotEmpty)
             Container(
@@ -435,7 +420,9 @@ class DashboardLayout extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -482,7 +469,9 @@ class DashboardLayout extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -504,9 +493,9 @@ class DashboardLayout extends ConsumerWidget {
                 ],
               ),
             ),
-          
+
           const Spacer(),
-          
+
           // ⭐ INFORMACIÓN DEL USUARIO Y CERRAR SESIÓN
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -521,7 +510,7 @@ class DashboardLayout extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.spacing12),
-              
+
               // Avatar con iniciales
               CircleAvatar(
                 backgroundColor: Theme.of(context).primaryColor,
@@ -536,14 +525,14 @@ class DashboardLayout extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.spacing8),
-              
+
               // Botón de configuración de temas
               IconButton(
                 icon: const Icon(Icons.palette_outlined),
                 onPressed: () => _showThemeModal(context, ref),
                 tooltip: 'Configuración de temas',
               ),
-              
+
               // Botón de cerrar sesión
               IconButton(
                 icon: const Icon(Icons.logout),
@@ -555,108 +544,6 @@ class DashboardLayout extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  int _getSelectedIndex() {
-    switch (currentRoute) {
-      case '/dashboard':
-        return 0;
-      case '/products':
-        return 1;
-      case '/categories':
-        return 2;
-      case '/suppliers':
-        return 3;
-      case '/locations':
-        return 4;
-      case '/orders':
-        return 5;
-      case '/customers':
-        return 6;
-      case '/stores':
-        return 7;
-      case '/users':
-        return 8;
-      case '/reports':
-        return 9;
-      default:
-        return 0;
-    }
-  }
-
-  void _onDestinationSelected(int index) {
-    final List<String> routes = [
-      '/dashboard',
-      '/products',
-      '/categories',
-      '/suppliers',
-      '/locations',
-      '/orders',
-      '/customers',
-      '/stores',
-      '/users',
-      '/reports',
-    ];
-    
-    if (index >= 0 && index < routes.length) {
-      // Note: This will be handled by the page routing system
-      // The Navigator should be called from the pages themselves
-    }
-  }
-
-  List<NavigationRailDestination> _getNavigationDestinations(WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isAdmin = authState.currentUser?['role'] == 'admin';
-    
-    final List<NavigationRailDestination> destinations = [
-      const NavigationRailDestination(
-        icon: Icon(Icons.dashboard_outlined),
-        label: Text('Dashboard'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.inventory_2_outlined),
-        label: Text('Productos'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.category_outlined),
-        label: Text('Categorías'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.local_shipping_outlined),
-        label: Text('Proveedores'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.location_on_outlined),
-        label: Text('Ubicaciones'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.receipt_long_outlined),
-        label: Text('Órdenes'),
-      ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.people_outline),
-        label: Text('Clientes'),
-      ),
-    ];
-    
-    if (isAdmin) {
-      destinations.addAll([
-        const NavigationRailDestination(
-          icon: Icon(Icons.store_outlined),
-          label: Text('Tiendas'),
-        ),
-        const NavigationRailDestination(
-          icon: Icon(Icons.person_outline),
-          label: Text('Usuarios'),
-        ),
-        const NavigationRailDestination(
-          icon: Icon(Icons.analytics_outlined),
-          label: Text('Reportes'),
-        ),
-      ]);
-    }
-    
-    return destinations;
   }
 
   Widget _buildThemeModeOption(
@@ -673,13 +560,17 @@ class DashboardLayout extends ConsumerWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected ? Theme.of(context).primaryColor : AppColors.textSecondary,
+        color: isSelected
+            ? Theme.of(context).primaryColor
+            : AppColors.textSecondary,
       ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Theme.of(context).primaryColor : AppColors.textPrimary,
+          color: isSelected
+              ? Theme.of(context).primaryColor
+              : AppColors.textPrimary,
         ),
       ),
       subtitle: Text(
@@ -694,7 +585,9 @@ class DashboardLayout extends ConsumerWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: isSelected ? Theme.of(context).primaryColor : AppColors.border,
+              color: isSelected
+                  ? Theme.of(context).primaryColor
+                  : AppColors.border,
               width: 2,
             ),
           ),
@@ -825,7 +718,9 @@ class DashboardLayout extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Restablecer Tema'),
-        content: const Text('¿Estás seguro de que deseas restablecer el tema a la configuración por defecto?'),
+        content: const Text(
+          '¿Estás seguro de que deseas restablecer el tema a la configuración por defecto?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -838,7 +733,9 @@ class DashboardLayout extends ConsumerWidget {
                 Navigator.pop(dialogContext);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Tema restablecido a la configuración por defecto'),
+                    content: Text(
+                      'Tema restablecido a la configuración por defecto',
+                    ),
                     backgroundColor: Colors.green,
                     duration: Duration(seconds: 2),
                   ),
@@ -878,192 +775,194 @@ class _SidebarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: isSidebarCollapsed
-            ? AppSizes.sidebarCollapsedWidth
-            : AppSizes.sidebarWidth,
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          border: Border(
-            right: BorderSide(color: AppColors.border),
-          ),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      width: isSidebarCollapsed
+          ? AppSizes.sidebarCollapsedWidth
+          : AppSizes.sidebarWidth,
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(0),
+          bottomRight: Radius.circular(0),
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(0),
-            bottomRight: Radius.circular(0),
-          ),
-          child: Column(
-            children: [
-              // Logo
-              Container(
-                height: AppSizes.appBarHeight,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSidebarCollapsed
-                      ? AppSizes.spacing4
-                      : AppSizes.spacing16,
-                ),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.border),
-                  ),
-                ),
-                child: isSidebarCollapsed
-                    ? Center(
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).primaryColor,
-                                Theme.of(context).colorScheme.secondary
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(
-                                AppSizes.radiusMedium),
+        child: Column(
+          children: [
+            // Logo
+            Container(
+              height: AppSizes.appBarHeight,
+              padding: EdgeInsets.symmetric(
+                horizontal: isSidebarCollapsed
+                    ? AppSizes.spacing4
+                    : AppSizes.spacing16,
+              ),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.border)),
+              ),
+              child: isSidebarCollapsed
+                  ? Center(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).primaryColor,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
                           ),
-                          child: const Icon(Icons.spa,
-                              color: AppColors.white, size: 20),
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusMedium,
+                          ),
                         ),
-                      )
-                    : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Theme.of(context).primaryColor,
-                                    Theme.of(context).colorScheme.secondary
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                    AppSizes.radiusMedium),
-                              ),
-                              child: const Icon(Icons.spa,
-                                  color: AppColors.white, size: 20),
-                            ),
-                            const SizedBox(width: AppSizes.spacing12),
-                            const Text(
-                              'BellezApp',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
+                        child: const Icon(
+                          Icons.spa,
+                          color: AppColors.white,
+                          size: 20,
                         ),
                       ),
-              ),
-              // Navigation Items
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 0),
-                  children: [
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.dashboard_outlined,
-                      label: 'Dashboard',
-                      route: '/dashboard',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.inventory_2_outlined,
-                      label: 'Productos',
-                      route: '/products',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.category_outlined,
-                      label: 'Categorías',
-                      route: '/categories',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.local_shipping_outlined,
-                      label: 'Proveedores',
-                      route: '/suppliers',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.location_on_outlined,
-                      label: 'Ubicaciones',
-                      route: '/locations',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.receipt_long_outlined,
-                      label: 'Órdenes',
-                      route: '/orders',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.people_outline,
-                      label: 'Clientes',
-                      route: '/customers',
-                      isSidebarCollapsed: isSidebarCollapsed,
-                    ),
-                    // ⭐ SOLO MOSTRAR TIENDAS, USUARIOS Y REPORTES PARA ADMINISTRADORES
-                    if (isAdmin) ...[
-                      _buildNavItem(
-                        context: context,
-                        icon: Icons.store_outlined,
-                        label: 'Tiendas',
-                        route: '/stores',
-                        isSidebarCollapsed: isSidebarCollapsed,
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).colorScheme.secondary,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusMedium,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.spa,
+                              color: AppColors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.spacing12),
+                          const Text(
+                            'BellezApp',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      _buildNavItem(
-                        context: context,
-                        icon: Icons.person_outline,
-                        label: 'Usuarios',
-                        route: '/users',
-                        isSidebarCollapsed: isSidebarCollapsed,
-                      ),
-                      _buildNavItem(
-                        context: context,
-                        icon: Icons.analytics_outlined,
-                        label: 'Reportes',
-                        route: '/reports',
-                        isSidebarCollapsed: isSidebarCollapsed,
-                      ),
-                    ],
+                    ),
+            ),
+            // Navigation Items
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 0),
+                children: [
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.dashboard_outlined,
+                    label: 'Dashboard',
+                    route: '/dashboard',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Productos',
+                    route: '/products',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.category_outlined,
+                    label: 'Categorías',
+                    route: '/categories',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.local_shipping_outlined,
+                    label: 'Proveedores',
+                    route: '/suppliers',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.location_on_outlined,
+                    label: 'Ubicaciones',
+                    route: '/locations',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Órdenes',
+                    route: '/orders',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.people_outline,
+                    label: 'Clientes',
+                    route: '/customers',
+                    isSidebarCollapsed: isSidebarCollapsed,
+                  ),
+                  // ⭐ SOLO MOSTRAR TIENDAS, USUARIOS Y REPORTES PARA ADMINISTRADORES
+                  if (isAdmin) ...[
+                    _buildNavItem(
+                      context: context,
+                      icon: Icons.store_outlined,
+                      label: 'Tiendas',
+                      route: '/stores',
+                      isSidebarCollapsed: isSidebarCollapsed,
+                    ),
+                    _buildNavItem(
+                      context: context,
+                      icon: Icons.person_outline,
+                      label: 'Usuarios',
+                      route: '/users',
+                      isSidebarCollapsed: isSidebarCollapsed,
+                    ),
+                    _buildNavItem(
+                      context: context,
+                      icon: Icons.analytics_outlined,
+                      label: 'Reportes',
+                      route: '/reports',
+                      isSidebarCollapsed: isSidebarCollapsed,
+                    ),
                   ],
-                ),
+                ],
               ),
-              // Bottom Actions
-              const Divider(height: 1),
-              // Botón de colapsar
-              Padding(
-                padding: const EdgeInsets.all(AppSizes.spacing8),
-                child: IconButton(
-                  icon: Icon(isSidebarCollapsed
-                      ? Icons.chevron_right
-                      : Icons.chevron_left),
-                  onPressed: onToggle,
-                  tooltip: isSidebarCollapsed
-                      ? 'Expandir menú'
-                      : 'Colapsar menú',
+            ),
+            // Bottom Actions
+            const Divider(height: 1),
+            // Botón de colapsar
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.spacing8),
+              child: IconButton(
+                icon: Icon(
+                  isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
                 ),
+                onPressed: onToggle,
+                tooltip: isSidebarCollapsed ? 'Expandir menú' : 'Colapsar menú',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildNavItem({
@@ -1090,42 +989,49 @@ class _SidebarWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: isSidebarCollapsed ? AppSizes.spacing4 : AppSizes.spacing16,
+              horizontal: isSidebarCollapsed
+                  ? AppSizes.spacing4
+                  : AppSizes.spacing16,
               vertical: AppSizes.spacing8,
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    color: isSelected
-                        ? Theme.of(context).primaryColor
-                        : AppColors.textSecondary,
-                    size: AppSizes.iconMedium,
-                  ),
-                  if (!isSidebarCollapsed) ...[
-                    const SizedBox(width: AppSizes.spacing12),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+            child: isSidebarCollapsed
+                ? Center(
+                    child: Icon(
+                      icon,
+                      color: isSelected
+                          ? Theme.of(context).primaryColor
+                          : AppColors.textSecondary,
+                      size: AppSizes.iconMedium,
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        icon,
                         color: isSelected
                             ? Theme.of(context).primaryColor
-                            : AppColors.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        fontSize: 14,
+                            : AppColors.textSecondary,
+                        size: AppSizes.iconMedium,
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                      const SizedBox(width: AppSizes.spacing12),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isSelected
+                              ? Theme.of(context).primaryColor
+                              : AppColors.textPrimary,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

@@ -52,10 +52,7 @@ class AuthProvider {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
       final data = jsonDecode(response.body);
@@ -71,7 +68,7 @@ class AuthProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error en el login'
+          'message': data['message'] ?? 'Error en el login',
         };
       }
     } catch (e) {
@@ -98,12 +95,12 @@ class AuthProvider {
         'lastName': lastName,
         'role': role,
       };
-      
+
       // Agregar tiendas si se proporcionan
       if (stores != null && stores.isNotEmpty) {
         requestBody['stores'] = stores;
       }
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
@@ -119,7 +116,7 @@ class AuthProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error en el registro'
+          'message': data['message'] ?? 'Error en el registro',
         };
       }
     } catch (e) {
@@ -142,7 +139,7 @@ class AuthProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error obteniendo perfil'
+          'message': data['message'] ?? 'Error obteniendo perfil',
         };
       }
     } catch (e) {
@@ -157,7 +154,7 @@ class AuthProvider {
 
   // Get All Users
   Future<Map<String, dynamic>> getAllUsers() async {
-    try {     
+    try {
       final response = await http.get(
         Uri.parse('$baseUrl/users'),
         headers: _headers,
@@ -171,12 +168,12 @@ class AuthProvider {
         if (resultData is Map && resultData.containsKey('users')) {
           resultData = resultData['users'];
         }
-        
+
         return {'success': true, 'data': resultData};
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error obteniendo usuarios'
+          'message': data['message'] ?? 'Error obteniendo usuarios',
         };
       }
     } catch (e) {
@@ -199,7 +196,7 @@ class AuthProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error obteniendo tiendas asignadas'
+          'message': data['message'] ?? 'Error obteniendo tiendas asignadas',
         };
       }
     } catch (e) {
@@ -228,7 +225,7 @@ class AuthProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error actualizando usuario'
+          'message': data['message'] ?? 'Error actualizando usuario',
         };
       }
     } catch (e) {
@@ -248,16 +245,24 @@ class AuthProvider {
         if (response.statusCode == 200 || response.statusCode == 204) {
           return {'success': true, 'message': 'Usuario eliminado exitosamente'};
         } else {
-          return {'success': false, 'message': 'Error eliminando usuario: código ${response.statusCode}'};
+          return {
+            'success': false,
+            'message':
+                'Error eliminando usuario: código ${response.statusCode}',
+          };
         }
       }
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 204) {
-        return {'success': true, 'data': data, 'message': 'Usuario eliminado exitosamente'};
+        return {
+          'success': true,
+          'data': data,
+          'message': 'Usuario eliminado exitosamente',
+        };
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error eliminando usuario'
+          'message': data['message'] ?? 'Error eliminando usuario',
         };
       }
     } catch (e) {
@@ -265,4 +270,3 @@ class AuthProvider {
     }
   }
 }
-

@@ -10,9 +10,9 @@ class CategoryDetailPage extends ConsumerStatefulWidget {
   final String categoryId;
 
   const CategoryDetailPage({
-    Key? key,
     required this.categoryId,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   ConsumerState<CategoryDetailPage> createState() => _CategoryDetailPageState();
@@ -81,10 +81,9 @@ class _CategoryDetailContent extends ConsumerStatefulWidget {
   final String categoryId;
 
   const _CategoryDetailContent({
-    Key? key,
     required this.category,
     required this.categoryId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<_CategoryDetailContent> createState() =>

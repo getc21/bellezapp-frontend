@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,19 +18,23 @@ class CurrencyModel {
 class CurrencyState {
   final String currentCurrencyId;
   final bool isInitialized;
+  final String? errorMessage;
 
   CurrencyState({
     required this.currentCurrencyId,
     required this.isInitialized,
+    this.errorMessage,
   });
 
   CurrencyState copyWith({
     String? currentCurrencyId,
     bool? isInitialized,
+    String? errorMessage,
   }) {
     return CurrencyState(
       currentCurrencyId: currentCurrencyId ?? this.currentCurrencyId,
       isInitialized: isInitialized ?? this.isInitialized,
+      errorMessage: errorMessage,
     );
   }
 }
@@ -45,60 +48,23 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
       symbol: '\$',
       code: 'USD',
     ),
-    CurrencyModel(
-      id: 'eur',
-      name: 'Euro',
-      symbol: '€',
-      code: 'EUR',
-    ),
-    CurrencyModel(
-      id: 'gbp',
-      name: 'Libra Esterlina',
-      symbol: '£',
-      code: 'GBP',
-    ),
-    CurrencyModel(
-      id: 'jpy',
-      name: 'Yen Japonés',
-      symbol: '¥',
-      code: 'JPY',
-    ),
-    CurrencyModel(
-      id: 'mxn',
-      name: 'Peso Mexicano',
-      symbol: '\$',
-      code: 'MXN',
-    ),
-    CurrencyModel(
-      id: 'ars',
-      name: 'Peso Argentino',
-      symbol: '\$',
-      code: 'ARS',
-    ),
+    CurrencyModel(id: 'eur', name: 'Euro', symbol: '€', code: 'EUR'),
+    CurrencyModel(id: 'gbp', name: 'Libra Esterlina', symbol: '£', code: 'GBP'),
+    CurrencyModel(id: 'jpy', name: 'Yen Japonés', symbol: '¥', code: 'JPY'),
+    CurrencyModel(id: 'mxn', name: 'Peso Mexicano', symbol: '\$', code: 'MXN'),
+    CurrencyModel(id: 'ars', name: 'Peso Argentino', symbol: '\$', code: 'ARS'),
     CurrencyModel(
       id: 'cop',
       name: 'Peso Colombiano',
       symbol: '\$',
       code: 'COP',
     ),
-    CurrencyModel(
-      id: 'clp',
-      name: 'Peso Chileno',
-      symbol: '\$',
-      code: 'CLP',
-    ),
-    CurrencyModel(
-      id: 'bob',
-      name: 'Boliviano',
-      symbol: 'Bs.',
-      code: 'BOB',
-    ),
+    CurrencyModel(id: 'clp', name: 'Peso Chileno', symbol: '\$', code: 'CLP'),
+    CurrencyModel(id: 'bob', name: 'Boliviano', symbol: 'Bs.', code: 'BOB'),
   ];
 
-  CurrencyNotifier() : super(CurrencyState(
-    currentCurrencyId: 'bob',
-    isInitialized: false,
-  ));
+  CurrencyNotifier()
+    : super(CurrencyState(currentCurrencyId: 'bob', isInitialized: false));
 
   List<CurrencyModel> get availableCurrencies => _availableCurrencies;
 
@@ -119,10 +85,14 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
       state = state.copyWith(
         currentCurrencyId: savedCurrencyId,
         isInitialized: true,
+        errorMessage: null,
       );
     } catch (e) {
-
-      state = state.copyWith(isInitialized: true);
+      // Failed to load currency from preferences, use default
+      state = state.copyWith(
+        isInitialized: true,
+        errorMessage: 'No se pudo cargar la moneda guardada',
+      );
     }
   }
 
@@ -134,9 +104,16 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('currency_id', currencyId);
 
-      state = state.copyWith(currentCurrencyId: currencyId);
+      state = state.copyWith(
+        currentCurrencyId: currencyId,
+        errorMessage: null,
+      );
     } catch (e) {
-
+      // Failed to save currency preference, but still update state
+      state = state.copyWith(
+        currentCurrencyId: currencyId,
+        errorMessage: 'Error al guardar la moneda seleccionada',
+      );
     }
   }
 
@@ -150,21 +127,27 @@ class CurrencyNotifier extends StateNotifier<CurrencyState> {
 
   // Obtener código de moneda actual
   String get code => currentCurrency.code;
+
+  // Limpiar mensaje de error
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
+  }
 }
 
 // Provider de la moneda
-final currencyProvider = StateNotifierProvider<CurrencyNotifier, CurrencyState>((ref) {
-  return CurrencyNotifier();
-});
+final currencyProvider = StateNotifierProvider<CurrencyNotifier, CurrencyState>(
+  (ref) {
+    return CurrencyNotifier();
+  },
+);
 
 // Provider para obtener la moneda actual
 final currentCurrencyProvider = Provider<CurrencyModel>((ref) {
   final currencyState = ref.watch(currencyProvider);
   final notifier = ref.watch(currencyProvider.notifier);
-  
+
   return notifier.availableCurrencies.firstWhere(
     (c) => c.id == currencyState.currentCurrencyId,
     orElse: () => notifier.availableCurrencies.first,
   );
 });
-

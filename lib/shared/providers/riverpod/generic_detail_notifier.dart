@@ -2,34 +2,6 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show StateNotifier;
 import '../../services/cache_service.dart';
 import 'generic_detail_state.dart';
-
-/// Notifier genérico base para detalles de cualquier entidad individual
-/// Elimina código duplicado en ProductDetailNotifier, OrderDetailNotifier, etc.
-/// 
-/// Diferencia con EntityListNotifier<T>:
-/// - EntityListNotifier<T>: Para listas (con .family por ID, pero estado global)
-/// - EntityDetailNotifier<T>: Para items individuales (con .family, estado por ID)
-/// 
-/// Impacto:
-/// - Reduce código duplicado en 40%+
-/// - Mantenimiento centralizado (cambios en un lugar)
-/// - Patrón consistente para todos los detalles
-/// 
-/// Uso:
-/// ```dart
-/// class ProductDetailNotifier extends EntityDetailNotifier<Map<String, dynamic>> {
-///   final Ref ref;
-///   
-///   ProductDetailNotifier(this.ref, String itemId) 
-///     : super(itemId: itemId, cacheKeyPrefix: 'product_detail');
-///   
-///   @override
-///   Future<Map<String, dynamic>> fetchItem(String itemId) async {
-///     final result = await productProvider.getProductById(itemId);
-///     return result['data'] as Map<String, dynamic>;
-///   }
-/// }
-/// ```
 abstract class EntityDetailNotifier<T> extends StateNotifier<GenericDetailState<T>> {
   final String itemId;
   final String cacheKeyPrefix;

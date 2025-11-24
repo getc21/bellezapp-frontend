@@ -9,7 +9,7 @@ import '../../shared/providers/riverpod/location_detail_selectors.dart';
 class LocationDetailPage extends ConsumerStatefulWidget {
   final String locationId;
 
-  const LocationDetailPage({Key? key, required this.locationId}) : super(key: key);
+  const LocationDetailPage({super.key, required this.locationId});
 
   @override
   ConsumerState<LocationDetailPage> createState() => _LocationDetailPageState();
@@ -64,7 +64,7 @@ class _LocationDetailContent extends ConsumerStatefulWidget {
   final Map<String, dynamic> location;
   final String locationId;
 
-  const _LocationDetailContent({Key? key, required this.location, required this.locationId}) : super(key: key);
+  const _LocationDetailContent({required this.location, required this.locationId});
 
   @override
   ConsumerState<_LocationDetailContent> createState() => _LocationDetailContentState();

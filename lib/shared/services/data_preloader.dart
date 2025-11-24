@@ -45,7 +45,6 @@ class DataPreloader {
     String? batchName,
     bool priority = false,
   }) async {
-    final startTime = DateTime.now();
     final batch = batchName ?? 'batch_${DateTime.now().millisecondsSinceEpoch}';
 
     if (config.verbose) {
@@ -67,7 +66,6 @@ class DataPreloader {
 
       _loadedKeys.add(batch);
 
-      final duration = DateTime.now().difference(startTime);
       if (config.verbose) {
       }
     } catch (e) {
@@ -97,8 +95,6 @@ class DataPreloader {
       return _activePreloads[key]!;
     }
 
-    final startTime = DateTime.now();
-
     if (config.verbose) {
 
     }
@@ -110,7 +106,6 @@ class DataPreloader {
       await future;
       _loadedKeys.add(key);
 
-      final duration = DateTime.now().difference(startTime);
       if (config.verbose) {
       }
     } catch (e) {

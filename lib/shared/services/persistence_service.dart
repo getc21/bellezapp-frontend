@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/riverpod/auth_notifier.dart';
@@ -7,7 +6,7 @@ import '../providers/riverpod/currency_notifier.dart';
 import '../providers/riverpod/store_notifier.dart';
 
 /// Servicio de inicialización de persistencia
-/// 
+///
 /// Este servicio se encarga de:
 /// 1. Cargar la sesión guardada (auth)
 /// 2. Cargar el tema y modo guardados
@@ -32,7 +31,7 @@ class PersistenceService {
         await _loadStore(ref);
       }
     } catch (e) {
-
+      // Persistence initialization failed, continue with defaults
     }
   }
 
@@ -43,7 +42,7 @@ class PersistenceService {
       ref.read(authProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
-
+      // Failed to load session, will show login screen
     }
   }
 
@@ -54,7 +53,7 @@ class PersistenceService {
       ref.read(themeProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
-
+      // Failed to load theme, will use default theme
     }
   }
 
@@ -65,7 +64,7 @@ class PersistenceService {
       ref.read(currencyProvider); // Disparar la inicialización
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
-
+      // Failed to load currency, will use default currency
     }
   }
 
@@ -76,7 +75,7 @@ class PersistenceService {
       // Cargar tiendas (auto-seleccionará la guardada)
       await storeNotifier.loadStores(autoSelect: true);
     } catch (e) {
-
+      // Failed to load stores, will prompt user to select store
     }
   }
 
@@ -86,7 +85,8 @@ class PersistenceService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
     } catch (e) {
-
+      
+      // Failed to clear preferences, but logout will proceed
     }
   }
 
@@ -102,8 +102,8 @@ class PersistenceService {
         'selected_store_id': prefs.getString('selected_store_id'),
       };
     } catch (e) {
+      // Failed to read preferences, return error information
       return {'error': e.toString()};
     }
   }
 }
-

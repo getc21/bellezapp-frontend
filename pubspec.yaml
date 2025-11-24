@@ -8,6 +8,7 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  equatable: ^2.0.5
   flutter:
     sdk: flutter
   flutter_localizations:

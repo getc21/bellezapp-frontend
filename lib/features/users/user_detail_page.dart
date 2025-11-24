@@ -9,7 +9,7 @@ import '../../shared/providers/riverpod/user_detail_selectors.dart';
 class UserDetailPage extends ConsumerStatefulWidget {
   final String userId;
 
-  const UserDetailPage({Key? key, required this.userId}) : super(key: key);
+  const UserDetailPage({super.key, required this.userId});
 
   @override
   ConsumerState<UserDetailPage> createState() => _UserDetailPageState();
@@ -64,7 +64,7 @@ class _UserDetailContent extends ConsumerStatefulWidget {
   final Map<String, dynamic> user;
   final String userId;
 
-  const _UserDetailContent({Key? key, required this.user, required this.userId}) : super(key: key);
+  const _UserDetailContent({required this.user, required this.userId});
 
   @override
   ConsumerState<_UserDetailContent> createState() => _UserDetailContentState();

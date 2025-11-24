@@ -9,7 +9,7 @@ import '../../shared/providers/riverpod/store_detail_selectors.dart';
 class StoreDetailPage extends ConsumerStatefulWidget {
   final String storeId;
 
-  const StoreDetailPage({Key? key, required this.storeId}) : super(key: key);
+  const StoreDetailPage({super.key, required this.storeId});
 
   @override
   ConsumerState<StoreDetailPage> createState() => _StoreDetailPageState();
@@ -64,7 +64,7 @@ class _StoreDetailContent extends ConsumerStatefulWidget {
   final Map<String, dynamic> store;
   final String storeId;
 
-  const _StoreDetailContent({Key? key, required this.store, required this.storeId}) : super(key: key);
+  const _StoreDetailContent({required this.store, required this.storeId});
 
   @override
   ConsumerState<_StoreDetailContent> createState() => _StoreDetailContentState();

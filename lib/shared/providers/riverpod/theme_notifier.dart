@@ -104,7 +104,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
         isInitialized: true,
       );
     } catch (e) {
-
+      // Failed to load theme preferences, continue with defaults
       state = state.copyWith(isInitialized: true);
     }
   }
@@ -119,7 +119,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
       state = state.copyWith(currentThemeId: themeId);
     } catch (e) {
-
+      // Failed to save theme preference, UI will update but not persist
     }
   }
 
@@ -133,7 +133,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
       state = state.copyWith(themeMode: mode);
     } catch (e) {
-
+      // Failed to save theme mode, UI will update but not persist
     }
   }
 
@@ -149,7 +149,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
         themeMode: ThemeMode.system,
       );
     } catch (e) {
-
+      // Failed to reset theme preferences, UI will update but not persist
     }
   }
 

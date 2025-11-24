@@ -13,9 +13,9 @@ class SupplierDetailPage extends ConsumerStatefulWidget {
   final String supplierId;
 
   const SupplierDetailPage({
-    Key? key,
+    super.key,
     required this.supplierId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<SupplierDetailPage> createState() => _SupplierDetailPageState();
@@ -87,10 +87,9 @@ class _SupplierDetailContent extends ConsumerStatefulWidget {
   final String supplierId;
 
   const _SupplierDetailContent({
-    Key? key,
     required this.supplier,
     required this.supplierId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<_SupplierDetailContent> createState() =>

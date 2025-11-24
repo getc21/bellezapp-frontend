@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -104,6 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             _verifyTokenInBackground();
             return;
           } catch (e) {
+            // Datos de usuario guardados son inválidos, cargar desde API
           }
         }
 
@@ -141,7 +141,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await logout();
       }
     } catch (e) {
-      // No hacer logout aquí para evitar interrumpir al usuario
+      // Token verification failed, but don't interrupt user experience
     }
   }
 
@@ -151,6 +151,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_data', jsonEncode(userData));
     } catch (e) {
+      // Failed to save user data to local storage
     }
   }
 
@@ -160,6 +161,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_data');
     } catch (e) {
+      // Failed to clear user data from local storage
     }
   }
 
@@ -205,17 +207,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _authProvider.logout();
     } catch (e) {
+      // Logout failed, but continue with local cleanup
     }
 
     try {
       await _clearUserData();
     } catch (e) {
+      // Failed to clear user data
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('selected_store_id');
     } catch (e) {
+      // Failed to clear store ID
     }
 
     // Establecer estado limpio

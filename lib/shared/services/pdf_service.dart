@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' as io;
 import 'dart:js_interop';
+import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
 class PdfService {
@@ -433,7 +434,7 @@ class PdfService {
     final items = order['items'] as List? ?? [];
     final orderDate = order['orderDate'] ?? order['createdAt'];
     
-    String _getPaymentMethodText(String method) {
+      String getPaymentMethodText(String method) {
       switch (method.toLowerCase()) {
         case 'efectivo':
           return 'Efectivo';
@@ -446,7 +447,7 @@ class PdfService {
       }
     }
     
-    String _formatDate(dynamic date) {
+    String formatDate(dynamic date) {
       if (date == null) return 'N/A';
       try {
         final dateTime = date is DateTime ? date : DateTime.parse(date.toString());
@@ -496,7 +497,7 @@ class PdfService {
                         ),
                       ),
                       pw.Text(
-                        'Fecha: ${_formatDate(orderDate)}',
+                        'Fecha: ${formatDate(orderDate)}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                     ],
@@ -632,7 +633,7 @@ class PdfService {
                           ),
                         ],
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
 
@@ -646,7 +647,7 @@ class PdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'Método de pago: ${_getPaymentMethodText(paymentMethod)}',
+                          'Método de pago: ${getPaymentMethodText(paymentMethod)}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                       pw.SizedBox(height: 10),
@@ -755,7 +756,10 @@ class PdfService {
   }
 
   static void _downloadFileWeb(String filename, List<int> bytes) {
-    final blob = web.Blob([(bytes as JSAny)].toJS);
+    // Convert List<int> to Uint8List and then to JS for Blob
+    final uint8List = Uint8List.fromList(bytes);
+    final jsUint8Array = uint8List.toJS;
+    final blob = web.Blob([jsUint8Array].toJS);
     final url = web.URL.createObjectURL(blob);
     final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
     anchor.href = url;

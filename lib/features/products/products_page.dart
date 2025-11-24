@@ -39,11 +39,11 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   }
 
   void _loadData() {
-      if (kDebugMode)
+      if (kDebugMode) debugPrint(' ProductsPage: _loadData called');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_hasInitialized) {
         _hasInitialized = true;
-      if (kDebugMode)
+      if (kDebugMode) debugPrint(' ProductsPage: Loading data in optimized sequence');
         final productState = ref.read(productProvider);
         final supplierState = ref.read(supplierProvider);
         final categoryState = ref.read(categoryProvider);
@@ -126,9 +126,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             builder: (context, ref, child) {
               final productState = ref.watch(productProvider);
               
-      if (kDebugMode)
-      if (kDebugMode)
-      if (kDebugMode)
+      if (kDebugMode) debugPrint(' ProductsPage: Consumer rebuilding...');
+      if (kDebugMode) debugPrint('   - isLoading: ${productState.isLoading}');
+      if (kDebugMode) debugPrint('   - products length: ${productState.products.length}');
               
               if (productState.isLoading) {
                 return Card(
@@ -263,16 +263,16 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   }
 
   List<DataRow2> _buildProductRows(List<dynamic> products) {
-      if (kDebugMode)
-      if (kDebugMode)
-      if (kDebugMode)
+      if (kDebugMode) debugPrint(' ProductsPage: _buildProductRows called');
+      if (kDebugMode) debugPrint('   - Total products: ${products.length}');
+      if (kDebugMode) debugPrint('   - Search query: "$_searchQuery"');
     
     final filteredProducts = products
         .where((p) => _searchQuery.isEmpty || 
                      (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
-      if (kDebugMode)
+      if (kDebugMode) debugPrint('   - Filtered products: ${filteredProducts.length}');
     
     // Paginación
     final startIndex = _currentPage * _itemsPerPage;
@@ -527,23 +527,19 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   void _confirmDeleteProduct(Map<String, dynamic> product) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Confirmar eliminación'),
         content: Text('¿Estás seguro de eliminar "${product['name']}"?'),
         actions: [
           TextButton(
             onPressed: () {
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
+              Navigator.of(dialogContext).pop();
             },
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
+              Navigator.of(dialogContext).pop();
               await ref.read(productProvider.notifier).deleteProduct(product['_id']);
             },
             style: ElevatedButton.styleFrom(
@@ -609,11 +605,11 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           final bytes = await image.readAsBytes();
           imageBytes = 'data:image/jpeg;base64,${base64Encode(bytes)}';
           imagePreview = imageBytes;
-      if (kDebugMode)
+      if (kDebugMode) debugPrint(' Image selected: ${image.name}');
         }
       } catch (e) {
-      if (kDebugMode)
-        if (context.mounted) {
+      if (kDebugMode) debugPrint(' Error picking image: $e');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error al seleccionar imagen')),
           );
@@ -704,7 +700,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   const SizedBox(height: AppSizes.spacing16),
 
                   DropdownButtonFormField<String>(
-                    value: selectedCategoryId,
+                    initialValue: selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Categoría *',
                       border: OutlineInputBorder(),
@@ -723,7 +719,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   const SizedBox(height: AppSizes.spacing16),
 
                   DropdownButtonFormField<String>(
-                    value: selectedSupplierId,
+                    initialValue: selectedSupplierId,
                     decoration: const InputDecoration(
                       labelText: 'Proveedor *',
                       border: OutlineInputBorder(),
@@ -742,7 +738,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   const SizedBox(height: AppSizes.spacing16),
 
                   DropdownButtonFormField<String>(
-                    value: selectedLocationId,
+                    initialValue: selectedLocationId,
                     decoration: const InputDecoration(
                       labelText: 'Ubicación *',
                       border: OutlineInputBorder(),
@@ -982,6 +978,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   final currentStore = storeState.currentStore;
                   
                   if (currentStore == null) {
+                    if (!context.mounted) {
+                      setState(() => isLoading = false);
+                      return;
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('No hay tienda seleccionada')),
                     );
@@ -1012,10 +1012,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
                 setState(() => isLoading = false);
                 if (success) {
-      if (kDebugMode)
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
                   await Future.delayed(const Duration(milliseconds: 300));
                   await ref.read(productProvider.notifier).loadProductsForCurrentStore();
                 }
@@ -1156,8 +1154,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 );
                 setState(() => isLoading = false);
 
-                if (success && context.mounted) {
-                  Navigator.of(context).pop();
+                if (success) {
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -1192,15 +1192,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
       await PdfService.generateProductQrLabels(product: product);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PDF con 10 QRs descargado correctamente'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PDF con 10 QRs descargado correctamente'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
       String errorMessage = 'Error al generar PDF';
       
@@ -1211,15 +1210,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         errorMessage = 'Permiso denegado. Habilita permisos de almacenamiento.';
       }
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            duration: const Duration(seconds: 4),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

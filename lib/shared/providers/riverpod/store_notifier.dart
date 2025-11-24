@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../store_provider.dart' as store_api;
@@ -53,9 +52,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
 
     final authState = ref.read(authProvider);
     if (authState.token.isEmpty) {
-      state = state.copyWith(
-        errorMessage: 'No hay sesión activa',
-      );
+      state = state.copyWith(errorMessage: 'No hay sesión activa');
       return;
     }
 
@@ -70,7 +67,6 @@ class StoreNotifier extends StateNotifier<StoreState> {
 
         if (autoSelect) {
           await _selectInitialStore();
-        } else {
         }
       } else {
         state = state.copyWith(
@@ -78,9 +74,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: 'Error de conexión: $e',
-      );
+      state = state.copyWith(errorMessage: 'Error de conexión: $e');
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -108,10 +102,11 @@ class StoreNotifier extends StateNotifier<StoreState> {
         }
       }
 
-      // Si no hay tienda guardada, seleccionar la primera
+      // If no saved store found, select first one as fallback
       state = state.copyWith(currentStore: state.stores.first);
       await _saveSelectedStore(state.stores.first);
     } catch (e) {
+      // Failed to load preferences, use first store as fallback
       if (state.stores.isNotEmpty) {
         state = state.copyWith(currentStore: state.stores.first);
       }
@@ -124,6 +119,7 @@ class StoreNotifier extends StateNotifier<StoreState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('selected_store_id', store['_id'].toString());
     } catch (e) {
+      // Failed to save store preference to local storage
     }
   }
 
@@ -142,6 +138,11 @@ class StoreNotifier extends StateNotifier<StoreState> {
   // Callback cuando cambia la tienda
   void _onStoreChanged() {
     // Esto puede ser usado para refrescar otros datos
+  }
+
+  // Limpiar mensaje de error
+  void clearError() {
+    state = state.copyWith(errorMessage: '');
   }
 
   // Limpiar tiendas
@@ -287,4 +288,3 @@ class StoreNotifier extends StateNotifier<StoreState> {
 final storeProvider = StateNotifierProvider<StoreNotifier, StoreState>((ref) {
   return StoreNotifier(ref);
 });
-

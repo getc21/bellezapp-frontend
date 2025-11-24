@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/riverpod/auth_notifier.dart';
 import '../providers/riverpod/theme_notifier.dart';
 import '../providers/riverpod/currency_notifier.dart';
 import '../utils/theme_utils.dart';
@@ -37,14 +36,6 @@ class _PersistenceInitializerState
         ref.read(themeProvider.notifier).initializeTheme(),
         ref.read(currencyProvider.notifier).initializeCurrency(),
       ]);
-      
-      // Verificar que todo esté cargado
-      final authState = ref.read(authProvider);
-      final themeState = ref.read(themeProvider);
-      final currencyState = ref.read(currencyProvider);
-
-      if (kDebugMode) {
-      }
 
       if (mounted) {
         setState(() {
