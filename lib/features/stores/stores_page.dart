@@ -299,7 +299,6 @@ class _StoresPageState extends ConsumerState<StoresPage> {
                       icon: const Icon(Icons.delete_outline, size: 18),
                       onPressed: () => _confirmDelete(store),
                       tooltip: 'Eliminar',
-                      color: AppColors.error,
                     ),
                   ],
                 ),

@@ -1012,54 +1012,60 @@ class _SidebarWidget extends StatelessWidget {
             ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        child: InkWell(
-          onTap: () => context.go(route),
-          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isSidebarCollapsed
-                  ? AppSizes.spacing4
-                  : AppSizes.spacing16,
-              vertical: AppSizes.spacing8,
-            ),
-            child: isSidebarCollapsed
-                ? Center(
-                    child: Icon(
-                      icon,
-                      color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : AppColors.textSecondary,
-                      size: AppSizes.iconMedium,
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
+        child: Tooltip(
+          message: label,
+          showDuration: const Duration(seconds: 3),
+          preferBelow: false,
+          verticalOffset: 10,
+          child: InkWell(
+            onTap: () => context.go(route),
+            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSidebarCollapsed
+                    ? AppSizes.spacing4
+                    : AppSizes.spacing16,
+                vertical: AppSizes.spacing8,
+              ),
+              child: isSidebarCollapsed
+                  ? Center(
+                      child: Icon(
                         icon,
                         color: isSelected
                             ? Theme.of(context).primaryColor
                             : AppColors.textSecondary,
                         size: AppSizes.iconMedium,
                       ),
-                      const SizedBox(width: AppSizes.spacing12),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          icon,
                           color: isSelected
                               ? Theme.of(context).primaryColor
-                              : AppColors.textPrimary,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          fontSize: 14,
+                              : AppColors.textSecondary,
+                          size: AppSizes.iconMedium,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: AppSizes.spacing12),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : AppColors.textPrimary,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

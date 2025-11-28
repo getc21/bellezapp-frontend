@@ -29,9 +29,16 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     Future.microtask(() {
       final productNotifier = ref.read(productProvider.notifier);
       final customerNotifier = ref.read(customerProvider.notifier);
+      final formNotifier = ref.read(orderFormProvider.notifier);
       
       productNotifier.loadProductsForCurrentStore();
       customerNotifier.loadCustomers();
+      
+      // Limpiar el formulario completo para nueva orden
+      formNotifier.clearCart();
+      formNotifier.setSelectedCustomer(null);
+      formNotifier.setFilteredProducts([]);
+      formNotifier.setSearchQuery('');
     });
   }
 
@@ -116,7 +123,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
             ),
             const SizedBox(height: AppSizes.spacing16),
             
-            // Lista de productos encontrados
+            // Lista de productos encontrados o todos los productos
             SizedBox(
               height: 400,
               child: _buildProductList(),
@@ -131,14 +138,33 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     return Consumer(
       builder: (context, consumerRef, _) {
         final formState = consumerRef.watch(orderFormProvider);
-        final products = formState.filteredProducts;
+        final productState = consumerRef.watch(productProvider);
+        
+        // Si hay búsqueda activa, mostrar productos filtrados
+        // Si no, mostrar todos los productos disponibles
+        final products = formState.hasSearchText 
+            ? formState.filteredProducts 
+            : productState.products;
 
         if (products.isEmpty) {
-          return const Center(
-            child: Text(
-              'Busca productos por nombre para agregarlos a la orden',
-              style: TextStyle(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 64,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: AppSizes.spacing16),
+                Text(
+                  formState.hasSearchText 
+                      ? 'No hay productos que coincidan con tu búsqueda'
+                      : 'No hay productos disponibles',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           );
         }
@@ -503,7 +529,11 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
             const Divider(),
             Consumer(
               builder: (context, consumerRef, _) {
-                final subtotal = _calculateSubtotal();
+                // Watch orderFormProvider para que se reconstruya cuando cambien los items
+                final formState = consumerRef.watch(orderFormProvider);
+                final subtotal = formState.cartItems.fold(0.0, (sum, item) {
+                  return sum + ((item['price'] as num) * (item['quantity'] as int));
+                });
                 final total = subtotal;
 
                 return Column(
@@ -695,13 +725,6 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
     formNotifier.removeFromCart(item['_id'] as String);
   }
 
-  double _calculateSubtotal() {
-    final formState = ref.read(orderFormProvider);
-    return formState.cartItems.fold(0.0, (sum, item) {
-      return sum + ((item['price'] as num) * (item['quantity'] as int));
-    });
-  }
-
   void _showCustomerSearch() {
     final customerSearchController = TextEditingController();
     final filteredCustomers = ValueNotifier<List<Map<String, dynamic>>>([]);
@@ -868,9 +891,9 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
           ),
         );
 
-        // Recargar productos para actualizar el stock
+        // Recargar productos para actualizar el stock (FORZAR recarga desde servidor)
         final productNotifier = ref.read(productProvider.notifier);
-        await productNotifier.loadProductsForCurrentStore();
+        await productNotifier.loadProductsForCurrentStore(forceRefresh: true);
 
         // Recargar las órdenes con forzar actualización para mostrar la nueva orden
         await ref.read(orderProvider.notifier).loadOrdersForCurrentStore(forceRefresh: true);

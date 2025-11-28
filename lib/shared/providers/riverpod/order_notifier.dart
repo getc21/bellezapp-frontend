@@ -208,6 +208,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
       if (result['success']) {
         // Invalidar caché de órdenes después de crear una nueva
         _cache.invalidatePattern('orders:$storeId');
+        
+        // IMPORTANTE: Invalidar caché de productos para forzar recarga del stock
+        _cache.invalidatePattern('products:$storeId');
+        
         // Refrescar lista de órdenes
         await loadOrders(storeId: storeId, forceRefresh: true);
         state = state.copyWith(isLoading: false);

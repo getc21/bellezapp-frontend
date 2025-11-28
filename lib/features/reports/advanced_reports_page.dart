@@ -393,8 +393,13 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
               _showSnackBar('Reporte de Tendencias descargado');
               break;
             case 'comparison':
+              // Add profitability products to comparison data for PDF name mapping
+              final comparisonDataWithProfitability = Map<String, dynamic>.from(reportsState.periodsComparison);
+              comparisonDataWithProfitability['profitabilityProducts'] = 
+                reportsState.profitability['products'] as List? ?? [];
+              
               await PdfService.generateComparisonPdf(
-                data: reportsState.periodsComparison,
+                data: comparisonDataWithProfitability,
                 startDate: _startDate,
                 endDate: _endDate,
               );
@@ -419,7 +424,12 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
                   period: _selectedPeriod,
                 ),
                 PdfService.generateComparisonPdf(
-                  data: reportsState.periodsComparison,
+                  data: (() {
+                    final comparisonDataWithProfitability = Map<String, dynamic>.from(reportsState.periodsComparison);
+                    comparisonDataWithProfitability['profitabilityProducts'] = 
+                      reportsState.profitability['products'] as List? ?? [];
+                    return comparisonDataWithProfitability;
+                  })(),
                   startDate: _startDate,
                   endDate: _endDate,
                 ),
@@ -1059,6 +1069,31 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
     final current = comparison['currentPeriod'] as Map<String, dynamic>? ?? {};
     final previous = comparison['previousPeriod'] as Map<String, dynamic>? ?? {};
     final productComparisons = data['productComparisons'] as List? ?? [];
+    
+    // Crear un mapa de nombres de productos desde los datos de rentabilidad
+    final profitabilityData = reportsState.profitability;
+    final profitabilityProducts = profitabilityData['products'] as List? ?? [];
+    
+    // Obtener lista de nombres de rentabilidad ordenados por ventas (descendente)
+    final profitabilityNames = <String>[];
+    final sortedProfitability = List.from(profitabilityProducts);
+    sortedProfitability.sort((a, b) {
+      final saleA = (a['totalRevenue'] ?? 0) as num;
+      final saleB = (b['totalRevenue'] ?? 0) as num;
+      return saleB.compareTo(saleA); // Descendente
+    });
+    
+    for (var p in sortedProfitability) {
+      final name = p['productName']?.toString();
+      if (name != null && name.isNotEmpty) {
+        profitabilityNames.add(name);
+      }
+    }
+    
+    debugPrint('=== PROFITABILITY NAMES (sorted by sales) ===');
+    for (var i = 0; i < profitabilityNames.length; i++) {
+      debugPrint('$i: ${profitabilityNames[i]}');
+    }
 
     return Column(
       children: [
@@ -1133,12 +1168,25 @@ class _AdvancedReportsPageState extends ConsumerState<AdvancedReportsPage> {
                       final growth = product['growth'] ?? 0;
                       final growthColor = growth > 0 ? Colors.green : growth < 0 ? Colors.red : Colors.grey;
                       
+                      // Obtener el índice del producto en la comparación
+                      final comparisonIndex = productComparisons.indexOf(product);
+                      
+                      // Usar el nombre correspondiente de rentabilidad si existe
+                      String productName = 'Sin nombre';
+                      if (comparisonIndex >= 0 && comparisonIndex < profitabilityNames.length) {
+                        productName = profitabilityNames[comparisonIndex];
+                        debugPrint('Matched comparison[$comparisonIndex] -> ${profitabilityNames[comparisonIndex]}');
+                      } else {
+                        // Fallback: usar el campo directamente
+                        productName = product['productName']?.toString() ?? 'Sin nombre';
+                      }
+                      
                       return DataRow(cells: [
                         DataCell(
                           SizedBox(
                             width: 150,
                             child: Text(
-                              product['productName'] ?? 'Sin nombre',
+                              productName,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),

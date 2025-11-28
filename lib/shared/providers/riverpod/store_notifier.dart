@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../store_provider.dart' as store_api;
@@ -44,6 +45,25 @@ class StoreNotifier extends StateNotifier<StoreState> {
   void _initStoreProvider() {
     final authState = ref.read(authProvider);
     _storeProvider = store_api.StoreProvider(authState.token);
+  }
+
+  // Inicializar tiendas (cargar al iniciar la app)
+  Future<void> initializeStore() async {
+    _initStoreProvider();
+
+    final authState = ref.read(authProvider);
+    if (authState.token.isEmpty) {
+      // No hay token, no podemos cargar tiendas
+      return;
+    }
+
+    try {
+      // Cargar tiendas desde el servidor
+      await loadStores(autoSelect: true);
+    } catch (e) {
+      // Error silencioso en inicialización
+      debugPrint('Error initializing stores: $e');
+    }
   }
 
   // Cargar tiendas

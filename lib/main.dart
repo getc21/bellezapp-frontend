@@ -6,25 +6,32 @@ import 'shared/config/app_router.dart';
 import 'shared/providers/riverpod/theme_notifier.dart';
 import 'shared/providers/riverpod/auth_notifier.dart';
 import 'shared/providers/riverpod/currency_notifier.dart';
+import 'shared/providers/riverpod/store_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar persistencia ANTES de crear ProviderScope
+  // Crear un ProviderContainer separado para inicializar los providers
   final container = ProviderContainer();
+  
   try {
+    // Inicializar auth primero (se necesita token para cargar tiendas)
+    await container.read(authProvider.notifier).initializeAuth();
+    
+    // Luego inicializar otros providers que dependen de auth
     await Future.wait([
-      container.read(authProvider.notifier).initializeAuth(),
       container.read(themeProvider.notifier).initializeTheme(),
       container.read(currencyProvider.notifier).initializeCurrency(),
+      container.read(storeProvider.notifier).initializeStore(),
     ]);
   } catch (e) {
     debugPrint('Error initializing persistence: $e');
   }
   
   runApp(
-    ProviderScope(
-      child: BellezAppWeb(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const BellezAppWeb(),
     ),
   );
 }
@@ -34,6 +41,7 @@ class BellezAppWeb extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    
     final themeState = ref.watch(themeProvider);
     
     // Obtener el tema actual basado en los colores seleccionados

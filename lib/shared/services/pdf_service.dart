@@ -148,6 +148,25 @@ class PdfService {
     final current = comparison['currentPeriod'] as Map<String, dynamic>? ?? {};
     final previous = comparison['previousPeriod'] as Map<String, dynamic>? ?? {};
     final productComparisons = data['productComparisons'] as List? ?? [];
+    final profitabilityProducts = data['profitabilityProducts'] as List? ?? [];
+    
+    // Extract profitability names sorted by revenue (same logic as UI table)
+    final profitabilityNames = <String>[];
+    if (profitabilityProducts.isNotEmpty) {
+      final sortedProfitability = List.from(profitabilityProducts);
+      sortedProfitability.sort((a, b) {
+        final saleA = (a['totalRevenue'] ?? 0) as num;
+        final saleB = (b['totalRevenue'] ?? 0) as num;
+        return saleB.compareTo(saleA); // Descendente
+      });
+
+      for (var p in sortedProfitability) {
+        final name = p['productName']?.toString();
+        if (name != null && name.isNotEmpty) {
+          profitabilityNames.add(name);
+        }
+      }
+    }
     
     pdf.addPage(
       pw.MultiPage(
@@ -167,7 +186,7 @@ class PdfService {
           if (productComparisons.isNotEmpty) ...[
             pw.Text('Top 10 Productos - Comparación', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 10),
-            _buildProductComparisonTable(productComparisons),
+            _buildProductComparisonTable(productComparisons, profitabilityNames),
           ]
         ],
       ),
@@ -365,20 +384,35 @@ class PdfService {
     );
   }
 
-  static pw.Widget _buildProductComparisonTable(List products) {
+  static pw.Widget _buildProductComparisonTable(List products, [List<String> profitabilityNames = const []]) {
+    final productsToShow = products.take(10).toList();
+    final tableData = <List<String>>[];
+    
+    for (int i = 0; i < productsToShow.length; i++) {
+      final p = productsToShow[i];
+      final growth = p['growth'] ?? 0;
+      
+      // Use mapped name from profitability if available, otherwise use API name
+      String productName = p['productName'] ?? '';
+      if (i >= 0 && i < profitabilityNames.length && profitabilityNames[i].isNotEmpty) {
+        productName = profitabilityNames[i];
+      }
+      
+      final displayName = productName.substring(0, productName.length > 20 ? 20 : productName.length);
+      
+      tableData.add([
+        displayName,
+        '\$${(p['currentSales'] ?? 0).toStringAsFixed(2)}',
+        '${p['currentQuantity'] ?? 0}',
+        '\$${(p['previousSales'] ?? 0).toStringAsFixed(2)}',
+        '${p['previousQuantity'] ?? 0}',
+        '${growth.toStringAsFixed(1)}%',
+      ]);
+    }
+    
     return pw.TableHelper.fromTextArray(
       headers: ['Producto', 'Ventas Act', 'Cant Act', 'Ventas Ant', 'Cant Ant', 'Crec%'],
-      data: products.take(10).map((p) {
-        final growth = p['growth'] ?? 0;
-        return [
-          (p['productName'] ?? '').toString().substring(0, (p['productName'] ?? '').length > 20 ? 20 : (p['productName'] ?? '').length),
-          '\$${(p['currentSales'] ?? 0).toStringAsFixed(2)}',
-          '${p['currentQuantity'] ?? 0}',
-          '\$${(p['previousSales'] ?? 0).toStringAsFixed(2)}',
-          '${p['previousQuantity'] ?? 0}',
-          '${growth.toStringAsFixed(1)}%',
-        ];
-      }).toList(),
+      data: tableData,
       border: pw.TableBorder.all(width: 0.5),
       cellHeight: 20,
       cellAlignment: pw.Alignment.center,
