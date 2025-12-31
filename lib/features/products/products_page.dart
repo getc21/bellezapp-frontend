@@ -31,6 +31,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   bool _hasInitialized = false;
   int _currentPage = 0;
   static const int _itemsPerPage = 25;
+  bool _filterLowStock = false;
+  bool _filterExpiringSoon = false;
 
   @override
   void initState() {
@@ -115,6 +117,36 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo Producto'),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing8),
+              IconButton(
+                icon: const Icon(Icons.warning, color: Colors.white),
+                tooltip: 'Stock bajo (≤3 unidades)',
+                isSelected: _filterLowStock,
+                onPressed: () {
+                  setState(() {
+                    _filterLowStock = !_filterLowStock;
+                    _currentPage = 0;
+                  });
+                },
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing8),
+              IconButton(
+                icon: const Icon(Icons.event_busy, color: Colors.white),
+                tooltip: 'Caducidad próxima (<60 días)',
+                isSelected: _filterExpiringSoon,
+                onPressed: () {
+                  setState(() {
+                    _filterExpiringSoon = !_filterExpiringSoon;
+                    _currentPage = 0;
+                  });
+                },
+                style: IconButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                 ),
               ),
@@ -220,10 +252,34 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   }
 
   Widget _buildProductPagination(List<dynamic> products) {
-    // Calcular páginas basado en búsqueda
+    // Calcular páginas basado en búsqueda y filtros
     final filteredProducts = products
-        .where((p) => _searchQuery.isEmpty || 
-                     (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((p) {
+          // Filtro de búsqueda
+          final matchesSearch = _searchQuery.isEmpty || 
+                         (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                         (p['description'] as String? ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+          
+          // Filtro de stock bajo
+          final stock = p['stock'] as int;
+          final matchesLowStock = !_filterLowStock || stock <= 3;
+          
+          // Filtro de caducidad próxima
+          final expiryDate = p['expiryDate'];
+          bool matchesExpiringSoon = true;
+          if (_filterExpiringSoon && expiryDate != null) {
+            try {
+              final expDate = DateTime.parse(expiryDate);
+              final now = DateTime.now();
+              final difference = expDate.difference(now).inDays;
+              matchesExpiringSoon = difference < 60;
+            } catch (e) {
+              matchesExpiringSoon = false;
+            }
+          }
+          
+          return matchesSearch && matchesLowStock && matchesExpiringSoon;
+        })
         .toList();
     
     final totalPages = (filteredProducts.length / _itemsPerPage).ceil().clamp(1, double.infinity).toInt();
@@ -248,10 +304,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     ? () => setState(() => _currentPage--)
                     : null,
               ),
-              Text(
-                'Página ${_currentPage + 1} de $totalPages',
-                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-              ),
+        Text(
+          'Página ${_currentPage + 1} de $totalPages',
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
                 onPressed: _currentPage < totalPages - 1
@@ -271,8 +327,32 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       if (kDebugMode) debugPrint('   - Search query: "$_searchQuery"');
     
     final filteredProducts = products
-        .where((p) => _searchQuery.isEmpty || 
-                     (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((p) {
+          // Filtro de búsqueda
+          final matchesSearch = _searchQuery.isEmpty || 
+                         (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                         (p['description'] as String? ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+          
+          // Filtro de stock bajo
+          final stock = p['stock'] as int;
+          final matchesLowStock = !_filterLowStock || stock <= 3;
+          
+          // Filtro de caducidad próxima
+          final expiryDate = p['expiryDate'];
+          bool matchesExpiringSoon = true;
+          if (_filterExpiringSoon && expiryDate != null) {
+            try {
+              final expDate = DateTime.parse(expiryDate);
+              final now = DateTime.now();
+              final difference = expDate.difference(now).inDays;
+              matchesExpiringSoon = difference < 60;
+            } catch (e) {
+              matchesExpiringSoon = false;
+            }
+          }
+          
+          return matchesSearch && matchesLowStock && matchesExpiringSoon;
+        })
         .toList();
 
       if (kDebugMode) debugPrint('   - Filtered products: ${filteredProducts.length}');
@@ -286,8 +366,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
     return paginatedProducts.map((product) {
       final stock = product['stock'] as int;
-      final isLowStock = stock > 0 && stock < 10;
-      final isOutOfStock = stock == 0;
+      final isLowStock = stock > 3 && stock < 10;
+      final isOutOfStock = stock <= 3;
 
       return DataRow2(
         cells: [
@@ -514,12 +594,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       final now = DateTime.now();
       final difference = expDate.difference(now).inDays;
       
-      if (difference < 0) {
+      if (difference < 60) {
         return AppColors.error;
-      } else if (difference <= 30) {
+      } else if (difference < 90) {
         return AppColors.warning;
       } else {
-        return AppColors.success;
+        return Colors.grey;
       }
     } catch (e) {
       return Colors.grey;

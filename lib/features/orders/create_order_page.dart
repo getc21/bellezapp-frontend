@@ -601,7 +601,7 @@ class _CreateOrderPageState extends ConsumerState<CreateOrderPage> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : const Text('Crear Orden'),
+                            : const Text('Realizar Venta'),
                       ),
                     ),
                   ],

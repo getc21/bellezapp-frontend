@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../store_provider.dart' as store_api;
 import 'auth_notifier.dart';
+import 'product_notifier.dart';
 
 // Estado de tiendas
 class StoreState {
@@ -144,20 +145,25 @@ class StoreNotifier extends StateNotifier<StoreState> {
   }
 
   // Seleccionar tienda
-  void selectStore(Map<String, dynamic> store) {
+  Future<void> selectStore(Map<String, dynamic> store) async {
     final previousStore = state.currentStore;
     state = state.copyWith(currentStore: store);
-    _saveSelectedStore(store);
+    await _saveSelectedStore(store);
 
-    // Si la tienda cambió, notificar a otros providers
+    // Si la tienda cambió, recargar productos y otros datos
     if (previousStore?['_id'] != store['_id']) {
-      _onStoreChanged();
+      await _onStoreChanged();
     }
   }
 
   // Callback cuando cambia la tienda
-  void _onStoreChanged() {
-    // Esto puede ser usado para refrescar otros datos
+  Future<void> _onStoreChanged() async {
+    try {
+      // Recargar productos para la nueva tienda
+      await ref.read(productProvider.notifier).loadProductsForCurrentStore(forceRefresh: true);
+    } catch (e) {
+      debugPrint('Error reloading products on store change: $e');
+    }
   }
 
   // Limpiar mensaje de error

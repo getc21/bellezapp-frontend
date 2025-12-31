@@ -936,7 +936,7 @@ class _SidebarWidget extends StatelessWidget {
                   _buildNavItem(
                     context: context,
                     icon: Icons.receipt_long_outlined,
-                    label: 'Órdenes',
+                    label: 'Ventas',
                     route: '/orders',
                     isSidebarCollapsed: isSidebarCollapsed,
                   ),

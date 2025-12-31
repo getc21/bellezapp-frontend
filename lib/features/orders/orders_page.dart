@@ -72,7 +72,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
         : [];
 
     return DashboardLayout(
-      title: 'Órdenes',
+      title: 'Ventas',
       currentRoute: '/orders',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +100,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
               ElevatedButton.icon(
                 onPressed: () => context.go('/orders/create'),
                 icon: const Icon(Icons.add),
-                label: const Text('Nueva Orden'),
+                label: const Text('Nueva Venta'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                 ),
@@ -141,7 +141,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                         ElevatedButton.icon(
                           onPressed: () => context.go('/orders/create'),
                           icon: const Icon(Icons.add),
-                          label: const Text('Crear Primera Orden'),
+                          label: const Text('Crear Primera Venta'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                           ),

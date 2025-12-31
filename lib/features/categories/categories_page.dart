@@ -144,101 +144,173 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                     );
                   }
 
-                  return DataTable2(
-                    columnSpacing: 12,
-                    horizontalMargin: 12,
-                    minWidth: 600,
-                    columns: const [
-                      DataColumn2(
-                        label: Text('Imagen'),
-                        size: ColumnSize.S,
-                      ),
-                      DataColumn2(
-                        label: Text('Nombre'),
-                        size: ColumnSize.M,
-                      ),
-                      DataColumn2(
-                        label: Text('Descripción'),
-                        size: ColumnSize.L,
-                      ),
-                      DataColumn2(
-                        label: Text('Acciones'),
-                        size: ColumnSize.S,
-                      ),
-                    ],
-                    rows: filteredCategories.map((category) {
+                  return GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: filteredCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = filteredCategories[index];
                       final categoryName = category['name'] ?? '';
                       final categoryDescription = category['description'] ?? '-';
-                      // Backend devuelve 'foto', no 'image'
                       final categoryImage = category['foto'] ?? category['image'];
                       
-                      return DataRow2(
-                        onTap: () => _showCategoryProducts(context, ref, category, productState.products),
-                        cells: [
-                          DataCell(
-                            categoryImage != null && categoryImage.toString().isNotEmpty
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      categoryImage,
-                                      width: 40,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                      return Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: InkWell(
+                            onTap: () => _showCategoryProducts(context, ref, category, productState.products),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Imagen con botones en la esquina superior derecha
+                                Expanded(
+                                  flex: 2,
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(12),
+                                            topRight: Radius.circular(12),
                                           ),
-                                          child: Icon(
-                                            Icons.category_outlined,
-                                            size: 24,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  )
-                                : Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.category_outlined,
-                                      size: 24,
-                                      color: Theme.of(context).primaryColor,
+                                        ),
+                                        child: categoryImage != null && categoryImage.toString().isNotEmpty
+                                            ? ClipRRect(
+                                                borderRadius: const BorderRadius.only(
+                                                  topLeft: Radius.circular(12),
+                                                  topRight: Radius.circular(12),
+                                                ),
+                                                child: Image.network(
+                                                  categoryImage,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Icon(
+                                                        Icons.category_outlined,
+                                                        size: 52,
+                                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              )
+                                            : Center(
+                                                child: Icon(
+                                                  Icons.category_outlined,
+                                                  size: 52,
+                                                  color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                                ),
+                                              ),
+                                      ),
+                                      // Botones en esquina superior derecha
+                                      Positioned(
+                                        top: 12,
+                                        right: 12,
+                                        child: Column(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => _showCategoryDialog(context, ref, category: category),
+                                              child: Container(
+                                                width: 36,
+                                                height: 36,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.blue.withValues(alpha: 0.4),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                                                alignment: Alignment.center,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            GestureDetector(
+                                              onTap: () => _confirmDelete(context, ref, category),
+                                              child: Container(
+                                                width: 36,
+                                                height: 36,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.red.withValues(alpha: 0.4),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: const Icon(Icons.delete_outline, size: 18, color: Colors.white),
+                                                alignment: Alignment.center,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Contenido
+                                Expanded(
+                                  flex: MediaQuery.of(context).size.width < 800 ? 2 : 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(AppSizes.spacing16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              categoryName,
+                                              style: TextStyle(
+                                                fontSize: _calculateResponsiveFontSize(context, 15),
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              categoryDescription,
+                                              style: TextStyle(
+                                                fontSize: _calculateResponsiveFontSize(context, 12),
+                                                color: AppColors.textSecondary,
+                                                height: 1.4,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
-                          ),
-                          DataCell(Text(categoryName)),
-                          DataCell(Text(categoryDescription)),
-                          DataCell(
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18),
-                                  color: AppColors.textPrimary,
-                                  onPressed: () => _showCategoryDialog(context, ref, category: category),
-                                  tooltip: 'Editar',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18),
-                                  color: AppColors.textPrimary,
-                                  onPressed: () => _confirmDelete(context, ref, category),
-                                  tooltip: 'Eliminar',
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       );
-                    }).toList(),
+                    },
                   );
                 })(),
               ),
@@ -253,6 +325,11 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     final nameController = TextEditingController(text: category?['name'] ?? '');
     final descriptionController = TextEditingController(text: category?['description'] ?? '');
     final isEditing = category != null;
+
+    // Limpiar el formulario solo si es una nueva categoría (antes de abrir el diálogo)
+    if (!isEditing) {
+      ref.read(categoryFormProvider(null).notifier).clearImage();
+    }
 
     showDialog(
       context: context,
@@ -719,6 +796,28 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
         ),
       ),
     );
+  }
+
+  /// Calcula el tamaño de fuente responsivo basado en el ancho de la pantalla
+  double _calculateResponsiveFontSize(BuildContext context, double baseFontSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Escala el tamaño de fuente basado en el ancho de la pantalla
+    // En pantallas muy anchas (>1400px) mantiene el tamaño base
+    // En pantallas más estrechas reduce proporcionalmente
+    if (screenWidth > 1400) {
+      return baseFontSize;
+    } else if (screenWidth > 1200) {
+      return baseFontSize * 0.95;
+    } else if (screenWidth > 1000) {
+      return baseFontSize * 0.90;
+    } else if (screenWidth > 800) {
+      return baseFontSize * 0.85;
+    } else if (screenWidth > 600) {
+      return baseFontSize * 0.80;
+    } else {
+      return baseFontSize * 0.75;
+    }
   }
 }
 
