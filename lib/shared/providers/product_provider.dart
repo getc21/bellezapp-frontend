@@ -186,7 +186,7 @@ class ProductProvider {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Error creando producto'
+          'message': data['message'] ?? 'Error creando producto (HTTP ${response.statusCode})'
         };
       }
     } catch (e) {
@@ -205,6 +205,7 @@ class ProductProvider {
     String? categoryId,
     String? supplierId,
     String? locationId,
+    String? storeId,
     DateTime? expiryDate,
     dynamic imageFile,
     String? imageBytes,
@@ -231,6 +232,8 @@ class ProductProvider {
       if (expiryDate != null) {
         request.fields['expiryDate'] = expiryDate.toIso8601String();
       }
+      // Incluir el storeId para actualizar ProductStore
+      if (storeId != null) request.fields['storeId'] = storeId;
 
       if (imageFile != null && imageBytes != null) {
         // Para web, usar imageBytes (base64)
@@ -308,13 +311,14 @@ class ProductProvider {
     required String id,
     required int quantity,
     required String operation, // 'add' o 'subtract'
+    required String storeId,
   }) async {
     try {
       final url = Uri.parse('$baseUrl/products/$id/stock');
       
       if (kDebugMode) {
         print('🔍 Actualizando stock en: $url');
-        print('🔍 Quantity: $quantity, Operation: $operation');
+        print('🔍 Quantity: $quantity, Operation: $operation, StoreId: $storeId');
       }
 
       // PATCH - Como está definido en el backend
@@ -324,6 +328,7 @@ class ProductProvider {
         body: jsonEncode({
           'quantity': quantity,
           'operation': operation,
+          'storeId': storeId,
         }),
       ).timeout(
         const Duration(seconds: 30),
@@ -376,6 +381,7 @@ class ProductProvider {
   Future<Map<String, dynamic>> adjustStock({
     required String productId,
     required int adjustment,
+    required String storeId,
   }) async {
     final operation = adjustment > 0 ? 'add' : 'subtract';
     final quantity = adjustment.abs();
@@ -384,6 +390,7 @@ class ProductProvider {
       id: productId,
       quantity: quantity,
       operation: operation,
+      storeId: storeId,
     );
   }
 
@@ -405,6 +412,29 @@ class ProductProvider {
         };
       }
     } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  // Obtener stock del producto en todas las tiendas
+  Future<Map<String, dynamic>> getProductStocks(String productId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/$productId/stocks'),
+        headers: _headers,
+      );
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data['data']['stocks']};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error obteniendo stocks'
+        };
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ Error obtener stocks: $e');
       return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }

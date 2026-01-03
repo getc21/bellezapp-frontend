@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../product_provider.dart' as product_api;
 import 'auth_notifier.dart';
+import 'store_notifier.dart';
 import 'generic_detail_notifier.dart';
 import 'generic_detail_state.dart';
 
@@ -67,6 +68,17 @@ class ProductDetailNotifier extends EntityDetailNotifier<Map<String, dynamic>> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      final storeState = ref.read(storeProvider);
+      final currentStoreId = storeState.currentStore?['_id'];
+      
+      if (currentStoreId == null) {
+        state = state.copyWith(
+          error: 'No hay tienda seleccionada',
+          isLoading: false,
+        );
+        return false;
+      }
+      
       final currentStock = state.item?['stock'] as int? ?? 0;
       final difference = newStock - currentStock;
       final operation = difference > 0 ? 'add' : 'subtract';
@@ -76,6 +88,7 @@ class ProductDetailNotifier extends EntityDetailNotifier<Map<String, dynamic>> {
         id: itemId,
         quantity: quantity,
         operation: operation,
+        storeId: currentStoreId,
       );
 
       if (result['success']) {

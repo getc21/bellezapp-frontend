@@ -16,6 +16,7 @@ import '../../shared/providers/riverpod/location_notifier.dart';
 import '../../shared/providers/riverpod/store_notifier.dart';
 import '../../shared/providers/riverpod/supplier_notifier.dart';
 import '../../shared/providers/riverpod/currency_notifier.dart';
+import '../../shared/providers/riverpod/auth_notifier.dart';
 import '../../shared/services/pdf_service.dart';
 
 class ProductsPage extends ConsumerStatefulWidget {
@@ -157,6 +158,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           Consumer(
             builder: (context, ref, child) {
               final productState = ref.watch(productProvider);
+              final authState = ref.watch(authProvider);
+              final userRole = authState.currentUser?['role'] ?? '';
+              final canSeePurchasePrice = userRole == 'admin' || userRole == 'manager';
               
       if (kDebugMode) debugPrint(' ProductsPage: Consumer rebuilding...');
       if (kDebugMode) debugPrint('   - isLoading: ${productState.isLoading}');
@@ -219,17 +223,18 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                           child: DataTable2(
                             columnSpacing: 12,
                             horizontalMargin: 12,
-                            minWidth: 1100,
-                            columns: const [
-                              DataColumn2(label: Text('Producto'), size: ColumnSize.L),
-                              DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
-                              DataColumn2(label: Text('Stock'), size: ColumnSize.S),
-                              DataColumn2(label: Text('Precio Compra'), size: ColumnSize.S),
-                              DataColumn2(label: Text('Precio Venta'), size: ColumnSize.S),
-                              DataColumn2(label: Text('F. Caducidad'), size: ColumnSize.M),
-                              DataColumn2(label: Text('Acciones'), size: ColumnSize.M),
+                            minWidth: canSeePurchasePrice ? 1100 : 1000,
+                            columns: [
+                              const DataColumn2(label: Text('Producto'), size: ColumnSize.L),
+                              const DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
+                              const DataColumn2(label: Text('Stock'), size: ColumnSize.S),
+                              if (canSeePurchasePrice)
+                                const DataColumn2(label: Text('Precio Compra'), size: ColumnSize.S),
+                              const DataColumn2(label: Text('Precio Venta'), size: ColumnSize.S),
+                              const DataColumn2(label: Text('F. Caducidad'), size: ColumnSize.M),
+                              const DataColumn2(label: Text('Acciones'), size: ColumnSize.M),
                             ],
-                            rows: _buildProductRows(productState.products),
+                            rows: _buildProductRows(productState.products, canSeePurchasePrice),
                           ),
                         ),
                       ),
@@ -256,12 +261,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final filteredProducts = products
         .where((p) {
           // Filtro de búsqueda
+          final name = p['name']?.toString() ?? '';
+          final description = p['description']?.toString() ?? '';
           final matchesSearch = _searchQuery.isEmpty || 
-                         (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                         (p['description'] as String? ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+                         name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                         description.toLowerCase().contains(_searchQuery.toLowerCase());
           
           // Filtro de stock bajo
-          final stock = p['stock'] as int;
+          final stock = (p['stock'] as int?) ?? 0;
           final matchesLowStock = !_filterLowStock || stock <= 3;
           
           // Filtro de caducidad próxima
@@ -321,7 +328,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     );
   }
 
-  List<DataRow2> _buildProductRows(List<dynamic> products) {
+  List<DataRow2> _buildProductRows(List<dynamic> products, bool canSeePurchasePrice) {
       if (kDebugMode) debugPrint(' ProductsPage: _buildProductRows called');
       if (kDebugMode) debugPrint('   - Total products: ${products.length}');
       if (kDebugMode) debugPrint('   - Search query: "$_searchQuery"');
@@ -329,12 +336,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final filteredProducts = products
         .where((p) {
           // Filtro de búsqueda
+          final name = p['name']?.toString() ?? '';
+          final description = p['description']?.toString() ?? '';
           final matchesSearch = _searchQuery.isEmpty || 
-                         (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                         (p['description'] as String? ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+                         name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                         description.toLowerCase().contains(_searchQuery.toLowerCase());
           
           // Filtro de stock bajo
-          final stock = p['stock'] as int;
+          final stock = (p['stock'] as int?) ?? 0;
           final matchesLowStock = !_filterLowStock || stock <= 3;
           
           // Filtro de caducidad próxima
@@ -364,8 +373,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         ? filteredProducts.sublist(startIndex, endIndex)
         : [];
 
-    return paginatedProducts.map((product) {
-      final stock = product['stock'] as int;
+    return paginatedProducts
+        .where((product) {
+          // Filter out deleted/incomplete products
+          final name = product['name']?.toString() ?? '';
+          return name.isNotEmpty;
+        })
+        .map((product) {
+      final stock = (product['stock'] as int?) ?? 0;
       final isLowStock = stock > 3 && stock < 10;
       final isOutOfStock = stock <= 3;
 
@@ -406,7 +421,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          product['name'] as String,
+                          product['name']?.toString() ?? 'Sin nombre',
                           style: const TextStyle(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -437,32 +452,39 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             ),
           ),
           DataCell(
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.spacing8,
-                vertical: AppSizes.spacing4,
-              ),
-              decoration: BoxDecoration(
-                color: isOutOfStock ? AppColors.error.withValues(alpha: 0.1) :
-                       isLowStock ? AppColors.warning.withValues(alpha: 0.1) :
-                       AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-              ),
-              child: Text(
-                '$stock',
-                style: TextStyle(
-                  color: isOutOfStock ? AppColors.error :
-                         isLowStock ? AppColors.warning :
-                         AppColors.success,
-                  fontWeight: FontWeight.w600,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _showMultiStoreStockDialog(product),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spacing8,
+                    vertical: AppSizes.spacing4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isOutOfStock ? AppColors.error.withValues(alpha: 0.1) :
+                           isLowStock ? AppColors.warning.withValues(alpha: 0.1) :
+                           AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                  ),
+                  child: Text(
+                    '$stock',
+                    style: TextStyle(
+                      color: isOutOfStock ? AppColors.error :
+                             isLowStock ? AppColors.warning :
+                             AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          DataCell(Text(
-            _formatCurrency((product['purchasePrice'] as num)),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          )),
+          if (canSeePurchasePrice)
+            DataCell(Text(
+              _formatCurrency((product['purchasePrice'] as num)),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            )),
           DataCell(Text(
             _formatCurrency((product['salePrice'] as num)),
             style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).primaryColor),
@@ -554,9 +576,20 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     ),
                   ),
                 const SizedBox(height: 16),
-                Text(
-                  'Stock: ${product['stock']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                GestureDetector(
+                  onTap: () => _showMultiStoreStockDialog(product),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Text(
+                      'Stock: ${product['stock']}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text('Precio Compra: ${_formatCurrency((product['purchasePrice'] as num))}'),
@@ -615,7 +648,34 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de eliminar "${product['name']}"?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Estás seguro de eliminar "${product['name']}"?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_outlined, color: AppColors.error, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Este producto se eliminará de todas las sucursales permanentemente.',
+                      style: TextStyle(fontSize: 12, color: AppColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -631,7 +691,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Eliminar'),
+            child: const Text('Eliminar Permanentemente'),
           ),
         ],
       ),
@@ -642,11 +702,44 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     _showProductDialog();
   }
 
-  void _showProductDialog({Map<String, dynamic>? product}) {
+  Future<void> _showProductDialog({Map<String, dynamic>? product}) async {
+    // Cargar ubicaciones de la tienda actual ANTES de mostrar el dialog
+    // Esto detectará automáticamente si cambió la tienda
+    await ref.read(locationProvider.notifier).loadLocationsForCurrentStore();
+    
+    if (!mounted) return;
+    
     final categoryState = ref.read(categoryProvider);
     final locationState = ref.read(locationProvider);
     final storeState = ref.read(storeProvider);
     final supplierState = ref.read(supplierProvider);
+    
+    // Helper function to validate if a value exists in a list
+    String? getValidInitialValue(String? value, List<dynamic> items) {
+      if (value == null || value.isEmpty) return null;
+      final trimmedValue = value.trim();
+      
+      if (kDebugMode) {
+        debugPrint('🔍 Validando valor: "$trimmedValue"');
+        debugPrint('   Items disponibles: ${items.length}');
+        for (var item in items) {
+          final id = (item['_id']?.toString() ?? item['id']?.toString() ?? '').trim();
+          final name = item['name']?.toString() ?? 'Sin nombre';
+          debugPrint('   - ID: "$id", Nombre: "$name"');
+        }
+      }
+      
+      final exists = items.any((item) {
+        final id = (item['_id']?.toString() ?? item['id']?.toString() ?? '').trim();
+        return id == trimmedValue;
+      });
+      
+      if (kDebugMode) {
+        debugPrint('   ✓ Encontrado: $exists');
+      }
+      
+      return exists ? trimmedValue : null;
+    }
     
     final isEditing = product != null;
     final nameController = TextEditingController(text: product?['name'] ?? '');
@@ -679,6 +772,22 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     var selectedLocationId = product?['locationId'] is Map 
         ? (product?['locationId']?['_id'] as String?)
         : (product?['locationId'] as String?);
+    
+    if (kDebugMode) {
+      debugPrint('📦 Editando producto: ${product?['name']}');
+      debugPrint('   locationId raw: ${product?['locationId']}');
+      debugPrint('   selectedLocationId antes de validar: "$selectedLocationId"');
+    }
+    
+    // Ensure IDs are clean (no null or empty values) and exist in current data
+    selectedCategoryId = getValidInitialValue(selectedCategoryId, categoryState.categories);
+    selectedSupplierId = getValidInitialValue(selectedSupplierId, supplierState.suppliers);
+    selectedLocationId = getValidInitialValue(selectedLocationId, locationState.locations);
+    
+    if (kDebugMode) {
+      debugPrint('   selectedLocationId después de validar: "$selectedLocationId"');
+    }
+    
     var selectedExpiryDate = product?['expiryDate'] != null 
         ? DateTime.parse(product!['expiryDate']) 
         : null;
@@ -801,7 +910,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: categoryState.categories.map((category) {
-                      final id = category['_id']?.toString() ?? category['id']?.toString() ?? '''''' '';
+                      final id = (category['_id']?.toString() ?? category['id']?.toString() ?? '').trim();
                       final name = category['name']?.toString() ?? 'Sin nombre';
                       return DropdownMenuItem<String>(
                         value: id,
@@ -820,7 +929,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       prefixIcon: Icon(Icons.local_shipping_outlined),
                     ),
                     items: supplierState.suppliers.map((supplier) {
-                      final id = supplier['_id']?.toString() ?? supplier['id']?.toString() ?? '';
+                      final id = (supplier['_id']?.toString() ?? supplier['id']?.toString() ?? '').trim();
                       final name = supplier['name']?.toString() ?? 'Sin nombre';
                       return DropdownMenuItem<String>(
                         value: id,
@@ -831,45 +940,23 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   ),
                   const SizedBox(height: AppSizes.spacing16),
 
-                  if (isEditing)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.info_outlined, color: AppColors.warning, size: 20),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'La ubicación se edita desde el inventario de cada tienda',
-                              style: TextStyle(fontSize: 12, color: AppColors.warning),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedLocationId,
-                      decoration: const InputDecoration(
-                        labelText: 'Ubicación *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on_outlined),
-                      ),
-                      items: locationState.locations.map((location) {
-                        final id = location['_id']?.toString() ?? location['id']?.toString() ?? '';
-                        final name = location['name']?.toString() ?? 'Sin nombre';
-                        return DropdownMenuItem<String>(
-                          value: id,
-                          child: Text(name),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => selectedLocationId = value),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedLocationId,
+                    decoration: const InputDecoration(
+                      labelText: 'Ubicación *',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.location_on_outlined),
                     ),
+                    items: locationState.locations.map((location) {
+                      final id = (location['_id']?.toString() ?? location['id']?.toString() ?? '').trim();
+                      final name = location['name']?.toString() ?? 'Sin nombre';
+                      return DropdownMenuItem<String>(
+                        value: id,
+                        child: Text(name),
+                      );
+                    }).toList(),
+                    onChanged: (value) => setState(() => selectedLocationId = value),
+                  ),
                   const SizedBox(height: AppSizes.spacing16),
 
                   Row(
@@ -1019,7 +1106,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                   );
                   return;
                 }
-                if (selectedLocationId == null) {
+                if (selectedLocationId == null || selectedLocationId!.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Seleccione una ubicación')),
                   );
@@ -1128,10 +1215,36 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
                 setState(() => isLoading = false);
                 if (success) {
-                  if (!context.mounted) return;
+                  if (!context.mounted) {
+                    if (kDebugMode) debugPrint('⚠️ Context is not mounted after create');
+                    return;
+                  }
+                  if (kDebugMode) debugPrint('✅ Product created successfully, closing dialog...');
                   Navigator.of(context).pop();
                   await Future.delayed(const Duration(milliseconds: 300));
-                  await ref.read(productProvider.notifier).loadProductsForCurrentStore();
+                  if (kDebugMode) debugPrint('📦 Reloading products list...');
+                  try {
+                    await ref.read(productProvider.notifier).loadProductsForCurrentStore();
+                    if (kDebugMode) debugPrint('✅ Products list reloaded');
+                  } catch (e) {
+                    if (kDebugMode) {
+                      debugPrint('⚠️ Error reloading products: $e');
+                    }
+                  }
+                } else {
+                  // Mostrar error si la creación falló
+                  if (!context.mounted) return;
+                  final errorMessage = ref.read(productProvider).errorMessage;
+                  if (kDebugMode) {
+                    debugPrint('❌ Product creation failed');
+                    debugPrint('   errorMessage: $errorMessage');
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage.isNotEmpty ? errorMessage : 'Error al crear el producto'),
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -1334,6 +1447,183 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  void _showMultiStoreStockDialog(Map<String, dynamic> product) {
+    final productName = product['name'] ?? 'Producto';
+    final productId = product['_id'];
+    var isLoading = true;
+    List<Map<String, dynamic>> stocks = [];
+    String? errorMessage;
+    late StateSetter setDialogState;
+    
+    // Verificar si el usuario es admin o gerente
+    final authState = ref.read(authProvider);
+    final userRole = authState.currentUser?['role'] ?? '';
+    final canSeePrices = userRole == 'admin' || userRole == 'manager';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          setDialogState = setState;
+          
+          // Definir columnas según el rol
+          final columns = canSeePrices
+              ? const [
+                  DataColumn(label: Text('Sucursal')),
+                  DataColumn(label: Text('Stock')),
+                  DataColumn(label: Text('Precio Venta')),
+                  DataColumn(label: Text('Precio Compra')),
+                ]
+              : const [
+                  DataColumn(label: Text('Sucursal')),
+                  DataColumn(label: Text('Stock')),
+                ];
+          
+          return AlertDialog(
+            title: Text('Stock en Todas las Tiendas - $productName'),
+            content: SizedBox(
+              width: canSeePrices ? 700 : 400,
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : errorMessage != null
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: AppColors.error,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        )
+                      : stocks.isEmpty
+                          ? const Center(
+                              child: Text('Sin datos de stock'),
+                            )
+                          : SingleChildScrollView(
+                              child: DataTable(
+                                columns: columns,
+                                rows: stocks.map((stock) {
+                                  if (canSeePrices) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(
+                                          Text(
+                                            stock['storeName'] ?? 'Sin tienda',
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            stock['stock'].toString(),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: (stock['stock'] as int) <= 0 
+                                                  ? AppColors.error 
+                                                  : Colors.green,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            '\$${(stock['salePrice'] ?? 0).toStringAsFixed(2)}',
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            '\$${(stock['purchasePrice'] ?? 0).toStringAsFixed(2)}',
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  } else {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(
+                                          Text(
+                                            stock['storeName'] ?? 'Sin tienda',
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            stock['stock'].toString(),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: (stock['stock'] as int) <= 0 
+                                                  ? AppColors.error 
+                                                  : Colors.green,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                }).toList(),
+                              ),
+                            ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Cargar datos de stock después de que el diálogo esté abierto
+    _loadMultiStoreStocks(
+      productId,
+      () {
+        isLoading = false;
+        setDialogState(() {});
+      },
+      (newStocks, error) {
+        if (error != null) {
+          errorMessage = error;
+        } else {
+          stocks = newStocks;
+        }
+      },
+    );
+  }
+
+  Future<void> _loadMultiStoreStocks(
+    String productId,
+    VoidCallback onLoadComplete,
+    Function(List<Map<String, dynamic>>, String?) callback,
+  ) async {
+    try {
+      final result = await ref.read(productProvider.notifier).getProductStocks(productId);
+      
+      if (result['success']) {
+        final stocks = (result['data'] as List).cast<Map<String, dynamic>>();
+        callback(stocks, null);
+      } else {
+        callback([], result['message'] ?? 'Error cargando stock');
+      }
+    } catch (e) {
+      callback([], 'Error de conexión: $e');
+    } finally {
+      onLoadComplete();
     }
   }
 }

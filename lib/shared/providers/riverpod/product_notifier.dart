@@ -150,6 +150,15 @@ class ProductNotifier extends StateNotifier<ProductState> {
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
+      if (kDebugMode) {
+        debugPrint('🚀 Creating product:');
+        debugPrint('   - name: $name');
+        debugPrint('   - locationId: $locationId');
+        debugPrint('   - storeId: $storeId');
+        debugPrint('   - categoryId: $categoryId');
+        debugPrint('   - supplierId: $supplierId');
+      }
+
       final result = await _productProvider.createProduct(
         storeId: storeId,
         name: name,
@@ -166,9 +175,13 @@ class ProductNotifier extends StateNotifier<ProductState> {
         imageBytes: imageBytes,
       );
 
+      if (kDebugMode) {
+        debugPrint('📦 Create response: $result');
+      }
+
       if (result['success']) {
         _cache.invalidatePattern('products:$storeId');
-        await loadProducts(storeId: storeId, forceRefresh: true);
+        // NO llamar a loadProducts aquí - dejar que el dialog lo haga
         state = state.copyWith(isLoading: false);
         return true;
       } else {
@@ -176,6 +189,9 @@ class ProductNotifier extends StateNotifier<ProductState> {
           isLoading: false,
           errorMessage: result['message'] ?? 'Error creando producto',
         );
+        if (kDebugMode) {
+          debugPrint('❌ Create product error: ${result['message']}');
+        }
         return false;
       }
     } catch (e) {
@@ -206,6 +222,18 @@ class ProductNotifier extends StateNotifier<ProductState> {
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
+      // Obtener el ID de la tienda actual
+      final storeState = ref.read(storeProvider);
+      final currentStoreId = storeState.currentStore?['_id'];
+      
+      if (currentStoreId == null) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'No hay tienda seleccionada',
+        );
+        return false;
+      }
+      
       final result = await _productProvider.updateProduct(
         id: id,
         name: name,
@@ -216,6 +244,7 @@ class ProductNotifier extends StateNotifier<ProductState> {
         categoryId: categoryId,
         supplierId: supplierId,
         locationId: locationId,
+        storeId: currentStoreId,
         expiryDate: expiryDate,
         imageFile: imageFile,
         imageBytes: imageBytes,
@@ -223,7 +252,7 @@ class ProductNotifier extends StateNotifier<ProductState> {
 
       if (result['success']) {
         _cache.invalidatePattern('products:');
-        await loadProductsForCurrentStore(forceRefresh: true);
+        // NO llamar a loadProductsForCurrentStore aquí - dejar que el dialog lo haga
         state = state.copyWith(isLoading: false);
         return true;
       } else {
@@ -280,9 +309,21 @@ class ProductNotifier extends StateNotifier<ProductState> {
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
+      final storeState = ref.read(storeProvider);
+      final currentStoreId = storeState.currentStore?['_id'];
+      
+      if (currentStoreId == null) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'No hay tienda seleccionada',
+        );
+        return false;
+      }
+      
       final result = await _productProvider.adjustStock(
         productId: productId,
         adjustment: adjustment,
+        storeId: currentStoreId,
       );
 
       if (result['success']) {
@@ -312,6 +353,22 @@ class ProductNotifier extends StateNotifier<ProductState> {
 
   void clearProducts() {
     state = ProductState();
+  }
+
+  // Obtener stock del producto en todas las tiendas
+  Future<Map<String, dynamic>> getProductStocks(String productId) async {
+    _initProductProvider();
+
+    try {
+      final result = await _productProvider.getProductStocks(productId);
+      return result;
+    } catch (e) {
+      if (kDebugMode) print('❌ Error obtener stocks: $e');
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
   }
 }
 

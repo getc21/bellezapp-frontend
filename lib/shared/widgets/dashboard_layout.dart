@@ -383,10 +383,13 @@ class DashboardLayout extends ConsumerWidget {
     bool isSidebarCollapsed,
   ) {
     final authState = ref.watch(authProvider);
-    final isAdmin = authState.currentUser?['role'] == 'admin';
+    final userRole = authState.currentUser?['role'] ?? '';
+    final isAdmin = userRole == 'admin';
+    final isManager = userRole == 'manager';
 
     return _SidebarWidget(
       isAdmin: isAdmin,
+      isManager: isManager,
       currentRoute: currentRoute,
       isSidebarCollapsed: isSidebarCollapsed,
       onToggle: () {
@@ -798,12 +801,14 @@ class DashboardLayout extends ConsumerWidget {
 
 class _SidebarWidget extends StatelessWidget {
   final bool isAdmin;
+  final bool isManager;
   final String currentRoute;
   final bool isSidebarCollapsed;
   final VoidCallback onToggle;
 
   const _SidebarWidget({
     required this.isAdmin,
+    required this.isManager,
     required this.currentRoute,
     required this.isSidebarCollapsed,
     required this.onToggle,
@@ -922,13 +927,15 @@ class _SidebarWidget extends StatelessWidget {
                     route: '/categories',
                     isSidebarCollapsed: isSidebarCollapsed,
                   ),
-                  _buildNavItem(
-                    context: context,
-                    icon: Icons.local_shipping_outlined,
-                    label: 'Proveedores',
-                    route: '/suppliers',
-                    isSidebarCollapsed: isSidebarCollapsed,
-                  ),
+                  // ⭐ PROVEEDORES - SOLO PARA ADMIN Y MANAGER
+                  if (isAdmin || isManager)
+                    _buildNavItem(
+                      context: context,
+                      icon: Icons.local_shipping_outlined,
+                      label: 'Proveedores',
+                      route: '/suppliers',
+                      isSidebarCollapsed: isSidebarCollapsed,
+                    ),
                   _buildNavItem(
                     context: context,
                     icon: Icons.location_on_outlined,

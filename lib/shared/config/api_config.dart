@@ -7,14 +7,17 @@ class ApiConfig {
   // Puerto del backend
   static const String _port = '3000';
   
+  // URL de producción
+  static const String _productionUrl = 'https://naturalmarket.onrender.com/api';
+  
   // Detecta automáticamente si estamos en emulador, web o dispositivo físico
   static String get baseUrl {
-    // Para Web, usar URL local para desarrollo
+    // Para Web, usar URL de producción
     if (kIsWeb) {
-      // Desarrollo local
-      return 'http://localhost:$_port/api';
-      // Producción (descomentar para usar)
-      // return 'https://naturalmarket.onrender.com/api';
+      // Producción
+      return _productionUrl;
+      // Desarrollo local (descomentar para usar)
+      // return 'http://localhost:$_port/api';
       // Si necesitas acceder desde otra computadora en la red:
       // return 'http://$_localIP:$_port/api';
     }

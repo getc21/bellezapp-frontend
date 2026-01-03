@@ -31,6 +31,7 @@ class LocationState {
 class LocationNotifier extends StateNotifier<LocationState> {
   final Ref ref;
   final CacheService _cache = CacheService();
+  String? _lastLoadedStoreId; // Track last loaded store to detect changes
 
   LocationNotifier(this.ref) : super(LocationState());
 
@@ -49,13 +50,18 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
     try {
       final effectiveStoreId = storeId ?? ref.read(storeProvider).currentStore?['_id'];
+      
+      // Detectar si cambió la tienda y forzar recarga si cambió
+      final storeChanged = _lastLoadedStoreId != null && _lastLoadedStoreId != effectiveStoreId;
+      final shouldForceRefresh = forceRefresh || storeChanged;
 
       final cacheKey = _getCacheKey(effectiveStoreId ?? '');
 
       // Intentar obtener del caché si no es forzado
-      if (!forceRefresh && effectiveStoreId != null) {
+      if (!shouldForceRefresh && effectiveStoreId != null) {
         final cachedLocations = _cache.get<List<Map<String, dynamic>>>(cacheKey);
         if (cachedLocations != null) {
+          _lastLoadedStoreId = effectiveStoreId;
           state = state.copyWith(locations: cachedLocations, isLoading: false);
           return;
         }
@@ -74,6 +80,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
             ttl: const Duration(minutes: 10),
           );
         }
+        _lastLoadedStoreId = effectiveStoreId;
         state = state.copyWith(locations: locations);
       } else {
         state = state.copyWith(
