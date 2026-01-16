@@ -5,7 +5,6 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
@@ -18,6 +17,7 @@ import '../../shared/providers/riverpod/supplier_notifier.dart';
 import '../../shared/providers/riverpod/currency_notifier.dart';
 import '../../shared/providers/riverpod/auth_notifier.dart';
 import '../../shared/services/pdf_service.dart';
+import '../../shared/services/web_image_compression_service.dart';
 
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
@@ -796,20 +796,27 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       try {
         final XFile? image = await picker.pickImage(
           source: ImageSource.gallery,
-          maxWidth: 800,
-          maxHeight: 800,
+          maxWidth: 1200,
+          maxHeight: 1200,
           imageQuality: 85,
         );
         
         if (image != null) {
+          // Comprimir imagen usando WebImageCompressionService
+          final compressedResult = await WebImageCompressionService.compressImage(
+            imageFile: image,
+            quality: 0.85,
+            width: 1200,
+            height: 1200,
+          );
+
           selectedImage = [image];
-          final bytes = await image.readAsBytes();
-          imageBytes = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+          imageBytes = compressedResult['base64'] as String;
           imagePreview = imageBytes;
-      if (kDebugMode) debugPrint(' Image selected: ${image.name}');
+          if (kDebugMode) debugPrint(' Image selected and compressed: ${image.name}');
         }
       } catch (e) {
-      if (kDebugMode) debugPrint(' Error picking image: $e');
+        if (kDebugMode) debugPrint(' Error picking image: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error al seleccionar imagen')),

@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:bellezapp_web/shared/services/web_image_compression_service.dart';
 
 class CategoryFormState {
   final XFile? selectedImage;
@@ -75,24 +75,29 @@ class CategoryFormNotifier extends StateNotifier<CategoryFormState> {
     _imagePicker = ImagePicker();
   }
 
-  /// Seleccionar imagen de galería
+  /// Seleccionar imagen de galería con compresión automática
   Future<void> selectImage() async {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
+        maxWidth: 1200,
+        maxHeight: 1200,
         imageQuality: 85,
       );
 
       if (image != null) {
-        final bytes = await image.readAsBytes();
-        final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        // Comprimir imagen usando WebImageCompressionService
+        final compressedResult = await WebImageCompressionService.compressImage(
+          imageFile: image,
+          quality: 0.85,
+          width: 1200,
+          height: 1200,
+        );
 
         state = state.copyWith(
           selectedImage: image,
-          imageBytes: base64String,
-          imagePreview: base64String,
+          imageBytes: compressedResult['base64'] as String,
+          imagePreview: compressedResult['base64'] as String,
         );
       }
     } catch (e) {

@@ -6,7 +6,6 @@ import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
 import '../../shared/providers/riverpod/expense_notifier.dart';
 import '../../shared/providers/riverpod/store_notifier.dart';
-import '../../shared/widgets/loading_indicator.dart';
 
 class ExpenseFormPage extends ConsumerStatefulWidget {
   const ExpenseFormPage({super.key});
@@ -48,9 +47,11 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     final store = ref.read(storeProvider).currentStore;
 
     if (_amountController.text.isEmpty || store == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor completa los campos requeridos')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Por favor completa los campos requeridos')),
+        );
+      }
       return;
     }
 
@@ -71,21 +72,23 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             backgroundColor: AppColors.success,
           ),
         );
+      }
 
-        // Pequeño delay para que se vea el SnackBar antes de navegar
-        await Future.delayed(Duration(milliseconds: 500));
+      // Pequeño delay para que se vea el SnackBar antes de navegar
+      await Future.delayed(Duration(milliseconds: 500));
 
-        if (mounted) {
-          // 🔴 RECARGAR REPORTE antes de navegar
-          final storeId = store['_id'] as String;
-          await ref.read(expenseProvider.notifier).loadExpenseReport(
-            storeId: storeId,
-            period: 'monthly',
-          );
-          
-          // Navegar de vuelta al reporte de gastos
-          context.go('/expenses/report');
-        }
+      if (mounted) {
+        // 🔴 RECARGAR REPORTE antes de navegar
+        final storeId = store['_id'] as String;
+        await ref.read(expenseProvider.notifier).loadExpenseReport(
+          storeId: storeId,
+          period: 'monthly',
+        );
+      }
+
+      // Navegar después de recargar (usando context protegido)
+      if (mounted) {
+        context.go('/expenses/report');
       }
     } catch (e) {
       if (mounted) {
@@ -102,10 +105,11 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
   Future<void> _showCreateCategoryDialog() async {
     final store = ref.read(storeProvider).currentStore;
     final nameController = TextEditingController();
+    final pageState = this; // Guardar referencia del estado de la página
 
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Nueva Categoría'),
         content: TextField(
           controller: nameController,
@@ -116,15 +120,18 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: Theme.of(dialogContext).primaryColor,
             ),
             onPressed: () async {
               if (nameController.text.isNotEmpty && store != null) {
+                // Cerrar diálogo ANTES del async gap
+                Navigator.pop(dialogContext);
+                
                 try {
                   // Crear categoría en el backend
                   await ref.read(expenseProvider.notifier).createCategory(
@@ -133,9 +140,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                     description: 'Categoría personalizada',
                   );
 
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                  if (pageState.mounted) {
+                    ScaffoldMessenger.of(pageState.context).showSnackBar(
                       SnackBar(
                         content: Text('Categoría "${nameController.text}" creada ✅'),
                         backgroundColor: AppColors.success,
@@ -143,12 +149,11 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                     );
                     
                     // Recargar categorías en el estado
-                    setState(() {});
+                    pageState.setState(() {});
                   }
                 } catch (e) {
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                  if (pageState.mounted) {
+                    ScaffoldMessenger.of(pageState.context).showSnackBar(
                       SnackBar(
                         content: Text('Error: $e'),
                         backgroundColor: AppColors.error,
@@ -225,7 +230,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _selectedCategoryId,
+                            initialValue: _selectedCategoryId,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(),
                               hintText: 'Selecciona una categoría',

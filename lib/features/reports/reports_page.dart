@@ -468,130 +468,132 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     return DashboardLayout(
       title: 'Reportes',
       currentRoute: '/reports',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header con botón de reportes avanzados
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Reportes Básicos',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdvancedReportsPage()));
-                },
-                icon: const Icon(Icons.analytics),
-                label: const Text('Reportes Avanzados'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing20,
-                    vertical: AppSizes.spacing12,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header con botón de reportes avanzados
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Reportes Básicos',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.spacing16),
-          
-          // Period Selector
-          Row(
-            children: [
-              DropdownButton<String>(
-                value: _selectedPeriod,
-                items: ['Hoy', 'Semana', 'Mes Actual', 'Mes Anterior', 'Año', 'Personalizado']
-                    .map((period) => DropdownMenuItem(
-                          value: period,
-                          child: Text(period),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  // Use Future.microtask to avoid state updates during frame rendering
-                  Future.microtask(() {
-                    if (mounted) {
-                      setState(() {
-                        _selectedPeriod = value!;
-                        if (value != 'Personalizado') {
-                          _setDateRangeFromPeriod();
-                        }
-                      });
-                    }
-                  });
-                },
-              ),
-              const SizedBox(width: AppSizes.spacing16),
-              // Fecha Inicio
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).primaryColor,
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdvancedReportsPage()));
+                  },
+                  icon: const Icon(Icons.analytics),
+                  label: const Text('Reportes Avanzados'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.spacing20,
+                      vertical: AppSizes.spacing12,
+                    ),
+                  ),
                 ),
-                onPressed: () => _selectDate(true),
-                icon: const Icon(Icons.calendar_today, size: 16),
-                label: Text(
-                  _startDate != null 
-                      ? DateFormat('dd/MM/yyyy').format(_startDate!)
-                      : 'Fecha Inicio',
-                  style: const TextStyle(fontSize: 13),
+              ],
+            ),
+            const SizedBox(height: AppSizes.spacing16),
+            
+            // Period Selector
+            Row(
+              children: [
+                DropdownButton<String>(
+                  value: _selectedPeriod,
+                  items: ['Hoy', 'Semana', 'Mes Actual', 'Mes Anterior', 'Año', 'Personalizado']
+                      .map((period) => DropdownMenuItem(
+                            value: period,
+                            child: Text(period),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    // Use Future.microtask to avoid state updates during frame rendering
+                    Future.microtask(() {
+                      if (mounted) {
+                        setState(() {
+                          _selectedPeriod = value!;
+                          if (value != 'Personalizado') {
+                            _setDateRangeFromPeriod();
+                          }
+                        });
+                      }
+                    });
+                  },
                 ),
-              ),
-              const SizedBox(width: AppSizes.spacing8),
-              const Text('—', style: TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(width: AppSizes.spacing8),
-              // Fecha Fin
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).primaryColor,
+                const SizedBox(width: AppSizes.spacing16),
+                // Fecha Inicio
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () => _selectDate(true),
+                  icon: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(
+                    _startDate != null 
+                        ? DateFormat('dd/MM/yyyy').format(_startDate!)
+                        : 'Fecha Inicio',
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 ),
-                onPressed: () => _selectDate(false),
-                icon: const Icon(Icons.calendar_today, size: 16),
-                label: Text(
-                  _endDate != null 
-                      ? DateFormat('dd/MM/yyyy').format(_endDate!)
-                      : 'Fecha Fin',
-                  style: const TextStyle(fontSize: 13),
+                const SizedBox(width: AppSizes.spacing8),
+                const Text('—', style: TextStyle(color: AppColors.textSecondary)),
+                const SizedBox(width: AppSizes.spacing8),
+                // Fecha Fin
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () => _selectDate(false),
+                  icon: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(
+                    _endDate != null 
+                        ? DateFormat('dd/MM/yyyy').format(_endDate!)
+                        : 'Fecha Fin',
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 ),
-              ),
-              const Spacer(),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).primaryColor,
+                const Spacer(),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () => _exportToPdf(),
+                  icon: const Icon(Icons.file_download),
+                  label: const Text('Exportar PDF'),
                 ),
-                onPressed: () => _exportToPdf(),
-                icon: const Icon(Icons.file_download),
-                label: const Text('Exportar PDF'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.spacing24),
-          
-          // Sales Summary Cards
-          _buildSummaryCards(orderState),
-          const SizedBox(height: AppSizes.spacing32),
-          
-          // Sales Chart
-          _buildSalesChart(orderState),
-          const SizedBox(height: AppSizes.spacing24),
-          
-          // Category Distribution
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildCategoryChart(orderState),
-              ),
-              const SizedBox(width: AppSizes.spacing16),
-              Expanded(
-                child: _buildTopProductsChart(orderState),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: AppSizes.spacing24),
+            
+            // Sales Summary Cards
+            _buildSummaryCards(orderState),
+            const SizedBox(height: AppSizes.spacing32),
+            
+            // Sales Chart
+            _buildSalesChart(orderState),
+            const SizedBox(height: AppSizes.spacing24),
+            
+            // Category Distribution
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildCategoryChart(orderState),
+                ),
+                const SizedBox(width: AppSizes.spacing16),
+                Expanded(
+                  child: _buildTopProductsChart(orderState),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -613,8 +615,12 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         .where((o) => o['paymentMethod'] == 'transferencia')
         .length;
 
+    // Ajustar número de columnas según el ancho de pantalla
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 1200 ? 5 : screenWidth > 900 ? 3 : screenWidth > 600 ? 2 : 1;
+
     return GridView.count(
-      crossAxisCount: 5,
+      crossAxisCount: crossAxisCount,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: AppSizes.spacing16,
@@ -640,6 +646,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         padding: const EdgeInsets.all(AppSizes.spacing24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               chartTitle,
@@ -774,6 +781,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         padding: const EdgeInsets.all(AppSizes.spacing24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Ventas por Categoría',
@@ -796,6 +804,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               )
             else
               Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
                     height: 250,
@@ -864,6 +873,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         padding: const EdgeInsets.all(AppSizes.spacing24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Top Productos',
@@ -885,16 +895,21 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 ),
               )
             else
-              Column(
-                children: topProducts.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final product = entry.value.value;
-                  return _buildProductRow(
-                    product['name'],
-                    _formatCurrency(product['totalSales']),
-                    index + 1,
-                  );
-                }).toList(),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: topProducts.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final product = entry.value.value;
+                      return _buildProductRow(
+                        product['name'],
+                        _formatCurrency(product['totalSales']),
+                        index + 1,
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
           ],
         ),
@@ -915,21 +930,25 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Icon(icon, color: color, size: 28),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing8,
-                    vertical: AppSizes.spacing4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                  ),
-                  child: Text(
-                    change,
-                    style: const TextStyle(
-                      color: AppColors.success,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.spacing8,
+                      vertical: AppSizes.spacing4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                    ),
+                    child: Text(
+                      change,
+                      style: const TextStyle(
+                        color: AppColors.success,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
@@ -942,14 +961,14 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 fontSize: 11,
                 color: AppColors.textSecondary,
               ),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppSizes.spacing4),
             Text(
               value,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
@@ -976,7 +995,14 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             ),
           ),
           const SizedBox(width: AppSizes.spacing8),
-          Text(label, style: const TextStyle(fontSize: 14)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
@@ -999,6 +1025,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 '$position',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  fontSize: 12,
                   color: position <= 3 ? AppColors.warning : AppColors.textSecondary,
                 ),
               ),
@@ -1008,15 +1035,25 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           Expanded(
             child: Text(
               name,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            sales,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+          const SizedBox(width: AppSizes.spacing8),
+          Flexible(
+            child: Text(
+              sales,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Theme.of(context).primaryColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

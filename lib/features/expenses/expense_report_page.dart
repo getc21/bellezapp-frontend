@@ -82,19 +82,16 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   Future<void> _loadReport() async {
     final store = ref.read(storeProvider).currentStore;
     if (store == null) {
-      print('🔴 [ExpenseReport] No hay tienda seleccionada');
       return;
     }
 
     final storeId = store['_id'] as String?;
-    final storeName = store['name'] as String? ?? 'Sin nombre';
     
     if (storeId == null) {
-      print('🔴 [ExpenseReport] storeId es nulo');
+
       return;
     }
 
-    print('🟡 [ExpenseReport] Cargando reporte para tienda: $storeName ($storeId)');
 
     final expenseNotifier = ref.read(expenseProvider.notifier);
 
@@ -103,7 +100,6 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
       final startDate = _startDate!;
       final endDate = _endDate!.add(Duration(hours: 23, minutes: 59, seconds: 59));
       
-      print('📊 [ExpenseReport] Rango personalizado: ${startDate.toString()} a ${endDate.toString()}');
       
       await expenseNotifier.loadExpenseReport(
         storeId: storeId,
@@ -111,7 +107,6 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
         endDate: endDate,
       );
     } else {
-      print('📊 [ExpenseReport] Período: $_selectedPeriod');
       
       await expenseNotifier.loadExpenseReport(
         storeId: storeId,
@@ -119,18 +114,22 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
       );
     }
     
-    print('✅ [ExpenseReport] Reporte cargado exitosamente');
   }
 
   Future<void> _selectDateRange() async {
+    // Capturar context antes del async gap
+    final datePickerContext = context;
+    
     final picked = await showDateRangePicker(
-      context: context,
+      context: datePickerContext,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       initialDateRange: _startDate != null && _endDate != null
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
     );
+
+    if (!mounted) return;
 
     if (picked != null) {
       setState(() {
@@ -148,11 +147,14 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   }
 
   Future<void> _generateExpensePDF() async {
+    // Capturar context antes del async gap
+    final datePickerContext = context;
+    
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     
     final startDatePicker = await showDatePicker(
-      context: context,
+      context: datePickerContext,
       initialDate: firstDayOfMonth,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
@@ -161,13 +163,15 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     if (startDatePicker == null) return;
 
     final endDatePicker = await showDatePicker(
-      context: context,
+      context: datePickerContext,
       initialDate: DateTime.now(),
       firstDate: startDatePicker,
       lastDate: DateTime.now(),
     );
 
     if (endDatePicker == null) return;
+
+    if (!mounted) return;
 
     final store = ref.read(storeProvider).currentStore;
     if (store == null) return;
@@ -180,6 +184,8 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
       startDate: startDatePicker,
       endDate: endDatePicker.add(Duration(hours: 23, minutes: 59, seconds: 59)),
     );
+
+    if (!mounted) return;
 
     final expenseState = ref.read(expenseProvider);
     final report = expenseState.report;
@@ -477,7 +483,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
             Container(
               padding: EdgeInsets.all(AppSizes.spacing24),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
               ),
               child: Text(
@@ -587,7 +593,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // FILTROS
-                _buildFilterSection(),
+                _buildFilterSection(context),
                 SizedBox(height: AppSizes.spacing12),
 
                 // BOTÓN REGISTRAR GASTO
@@ -625,7 +631,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
                   Container(
                     padding: EdgeInsets.all(AppSizes.spacing24),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                     ),
                     child: Text(
@@ -638,14 +644,14 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // RESUMEN GENERAL
-                      _buildSummaryCards(report),
+                      _buildSummaryCards(context, report),
                       SizedBox(height: AppSizes.spacing12),
 
                       // GASTOS POR CATEGORÍA
-                      _buildCategoryBreakdown(report),
+                      _buildCategoryBreakdown(context, report),
                       SizedBox(height: AppSizes.spacing12),
                       // TOP GASTOS
-                      _buildTopExpenses(report),
+                      _buildTopExpenses(context, report),
                     ],
                   )
                 else
@@ -664,23 +670,19 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   Widget build(BuildContext context) {
     final expenseState = ref.watch(expenseProvider);
     final authState = ref.watch(authProvider);
-    final storeState = ref.watch(storeProvider);  // 🔴 Observar cambios de tienda
     final isEmployeeOnly = authState.isEmployee && !authState.isManager && !authState.isAdmin;
     final report = expenseState.report;
 
     // 🔴 EFECTO: Recargar reporte cuando cambia la tienda
     // Este listener se ejecuta cada vez que storeProvider cambia
     ref.listen<StoreState>(storeProvider, (previous, next) {
-      if (previous != null && next != null) {
-        final prevStoreId = previous.currentStore?['_id'];
-        final nextStoreId = next.currentStore?['_id'];
-        
-        if (prevStoreId != null && 
-            nextStoreId != null && 
-            prevStoreId != nextStoreId) {
-          print('🔴 [ExpenseReport-BUILD] Tienda cambió de $prevStoreId a $nextStoreId');
-          _loadReport();
-        }
+      final prevStoreId = previous?.currentStore?['_id'];
+      final nextStoreId = next.currentStore?['_id'];
+      
+      if (prevStoreId != null && 
+          nextStoreId != null && 
+          prevStoreId != nextStoreId) {
+        _loadReport();
       }
     });
 
@@ -693,7 +695,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     );
   }
 
-  Widget _buildFilterSection() {
+  Widget _buildFilterSection(BuildContext context) {
     return Card(
       elevation: 0,
       color: AppColors.surface,
@@ -713,13 +715,13 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildPeriodButton('Hoy', 'daily'),
+                  _buildPeriodButton(context, 'Hoy', 'daily'),
                   SizedBox(width: AppSizes.spacing12),
-                  _buildPeriodButton('Semana', 'weekly'),
+                  _buildPeriodButton(context, 'Semana', 'weekly'),
                   SizedBox(width: AppSizes.spacing12),
-                  _buildPeriodButton('Mes', 'monthly'),
+                  _buildPeriodButton(context, 'Mes', 'monthly'),
                   SizedBox(width: AppSizes.spacing12),
-                  _buildPeriodButton('Año', 'yearly'),
+                  _buildPeriodButton(context, 'Año', 'yearly'),
                   SizedBox(width: AppSizes.spacing12),
                   ElevatedButton.icon(
                     onPressed: _selectDateRange,
@@ -746,7 +748,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     );
   }
 
-  Widget _buildPeriodButton(String label, String period) {
+  Widget _buildPeriodButton(BuildContext context, String label, String period) {
     final isSelected = _selectedPeriod == period && !_isCustomDateRange;
     return ElevatedButton(
       onPressed: () {
@@ -771,11 +773,12 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     );
   }
 
-  Widget _buildSummaryCards(ExpenseReport report) {
+  Widget _buildSummaryCards(BuildContext context, ExpenseReport report) {
     return Row(
       children: [
         Expanded(
           child: _buildMetricCard(
+            context,
             'Total Gastos',
             _formatCurrency(report.totalExpense),
             '${report.expenseCount} transacciones',
@@ -786,6 +789,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
         SizedBox(width: AppSizes.spacing12),
         Expanded(
           child: _buildMetricCard(
+            context,
             'Promedio',
             _formatCurrency(report.averageExpense),
             'Por gasto',
@@ -796,6 +800,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
         SizedBox(width: AppSizes.spacing12),
         Expanded(
           child: _buildMetricCard(
+            context,
             'Categorías',
             '${report.byCategory.length}',
             'Tipos de gastos',
@@ -808,6 +813,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   }
 
   Widget _buildMetricCard(
+    BuildContext context,
     String title,
     String value,
     String subtitle,
@@ -816,7 +822,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   ) {
     return Card(
       elevation: 0,
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       child: Padding(
         padding: EdgeInsets.all(AppSizes.spacing24),
         child: Column(
@@ -855,7 +861,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     );
   }
 
-  Widget _buildCategoryBreakdown(ExpenseReport report) {
+  Widget _buildCategoryBreakdown(BuildContext context, ExpenseReport report) {
     return Card(
       elevation: 0,
       color: AppColors.surface,
@@ -928,7 +934,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
                           minHeight: 8,
                           backgroundColor: Colors.grey[300],
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.error.withOpacity(0.7),
+                            AppColors.error.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -951,7 +957,7 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
     );
   }
 
-  Widget _buildTopExpenses(ExpenseReport report) {
+  Widget _buildTopExpenses(BuildContext context, ExpenseReport report) {
     return Card(
       elevation: 0,
       color: AppColors.surface,

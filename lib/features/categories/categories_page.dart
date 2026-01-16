@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:data_table_2/data_table_2.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../shared/widgets/dashboard_layout.dart';
@@ -235,8 +234,8 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                                                     ),
                                                   ],
                                                 ),
-                                                child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
                                                 alignment: Alignment.center,
+                                                child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -256,8 +255,8 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                                                     ),
                                                   ],
                                                 ),
-                                                child: const Icon(Icons.delete_outline, size: 18, color: Colors.white),
                                                 alignment: Alignment.center,
+                                                child: const Icon(Icons.delete_outline, size: 18, color: Colors.white),
                                               ),
                                             ),
                                           ],

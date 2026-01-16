@@ -174,7 +174,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       }
     } catch (e) {
       state = state.copyWith(error: 'Error creando categoría: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -325,10 +325,8 @@ final dioProvider = Provider<Dio>((ref) {
     validateStatus: (status) => status! < 500,
   ));
   
-  // Agregar token JWT a los headers si existe
-  if (authState.token != null && authState.token!.isNotEmpty) {
-    dio.options.headers['Authorization'] = 'Bearer ${authState.token}';
-  }
+  // Agregar token JWT a los headers
+  dio.options.headers['Authorization'] = 'Bearer ${authState.token}';
   
   return dio;
 });

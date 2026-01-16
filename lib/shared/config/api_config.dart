@@ -1,28 +1,28 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConfig {
-  // IP de tu computadora en la red local
+  // IP de tu computadora en la red local (para desarrollo)
   static const String _localIP = '192.168.0.48';
   
-  // Puerto del backend
+  // Puerto del backend (desarrollo local)
   static const String _port = '3000';
   
-  // URL de producción
-  static const String _productionUrl = 'https://naturalmarket.onrender.com/api';
+  // URL de producción - CAMBIAR SEGÚN TU DOMINIO
+  static const String _productionUrl = 'https://bellezapp-api.onrender.com/api';
   
   // Detecta automáticamente si estamos en emulador, web o dispositivo físico
   static String get baseUrl {
-    // Para Web, usar URL de desarrollo local
+    // Para Web, usar URL de producción
     if (kIsWeb) {
-      // Desarrollo local
-      return 'http://localhost:$_port/api';
-      // Producción (comentado)
-      // return _productionUrl;
+      // Producción
+      return _productionUrl;
+      // Desarrollo local (comentado)
+      // return 'http://localhost:$_port/api';
       // Si necesitas acceder desde otra computadora en la red:
       // return 'http://$_localIP:$_port/api';
     }
     
-    // Para dispositivos móviles (código original conservado)
+    // Para dispositivos móviles (en desarrollo usa IP local, en producción usa URL remota)
     return 'http://$_localIP:$_port/api';
   }
   

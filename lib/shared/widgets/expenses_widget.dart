@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -102,7 +101,7 @@ class _ExpensesWidgetState extends ConsumerState<ExpensesWidget> {
                   Container(
                     padding: EdgeInsets.all(AppSizes.spacing12),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                     ),
                     child: Row(
@@ -198,7 +197,7 @@ class _ExpensesWidgetState extends ConsumerState<ExpensesWidget> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.error.withOpacity(0.2),
+                                    color: AppColors.error.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
