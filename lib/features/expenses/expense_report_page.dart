@@ -117,11 +117,8 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   }
 
   Future<void> _selectDateRange() async {
-    // Capturar context antes del async gap
-    final datePickerContext = context;
-    
     final picked = await showDateRangePicker(
-      context: datePickerContext,
+      context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       initialDateRange: _startDate != null && _endDate != null
@@ -147,14 +144,11 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
   }
 
   Future<void> _generateExpensePDF() async {
-    // Capturar context antes del async gap
-    final datePickerContext = context;
-    
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     
     final startDatePicker = await showDatePicker(
-      context: datePickerContext,
+      context: context,
       initialDate: firstDayOfMonth,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
@@ -162,8 +156,10 @@ class _ExpenseReportPageState extends ConsumerState<ExpenseReportPage> {
 
     if (startDatePicker == null) return;
 
+    if (!mounted) return;
+
     final endDatePicker = await showDatePicker(
-      context: datePickerContext,
+      context: context,
       initialDate: DateTime.now(),
       firstDate: startDatePicker,
       lastDate: DateTime.now(),

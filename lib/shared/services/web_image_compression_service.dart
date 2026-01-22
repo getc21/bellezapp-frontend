@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'dart:async';
+import 'package:web/web.dart';
+import 'dart:js_interop';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 
@@ -44,51 +46,50 @@ class WebImageCompressionService {
       }
 
       // Crear blob y URL para cargar la imagen en canvas
-      final html.Blob blob = html.Blob([imageBytes]);
-      final String imageUrl = html.Url.createObjectUrl(blob);
+      final blob = Blob([imageBytes.toJS].toJS);
+      final String imageUrl = URL.createObjectURL(blob);
 
       // Crear elemento de imagen para obtener dimensiones
-      final html.ImageElement img = html.ImageElement();
+      final img = HTMLImageElement();
       img.src = imageUrl;
 
       // Esperar a que la imagen se cargue
-      await img.onLoad.first;
+      await _waitForImageLoad(img);
 
       // Calcular nuevas dimensiones manteniendo aspecto
       final newSize = _calculateDimensions(
-        img.width!,
-        img.height!,
+        img.width,
+        img.height,
         width,
         height,
       );
 
       // Crear canvas y redimensionar imagen
-      final html.CanvasElement canvas = html.CanvasElement(
-        width: newSize['width'] as int,
-        height: newSize['height'] as int,
-      );
+      final canvas = HTMLCanvasElement();
+      canvas.width = newSize['width'] as int;
+      canvas.height = newSize['height'] as int;
 
-      final html.CanvasRenderingContext2D ctx = canvas.context2D;
+      final ctx = canvas.getContext('2d') as CanvasRenderingContext2D?;
+      
+      if (ctx == null) {
+        throw Exception('Failed to get canvas context');
+      }
       
       // Dibujar imagen escalada en el canvas
-      // En la API web, se usa drawImage con los parámetros: img, dx, dy, dWidth, dHeight
       ctx.drawImage(img, 0, 0);
-      
-      // Alternativamente, si necesitamos escalado:
-      // ctx.drawImageScaled(img, 0, 0, newSize['width'] as double, newSize['height'] as double);
 
       // Convertir canvas a blob comprimido
-      final html.Blob compressedBlob = await canvas.toBlob('image/jpeg', quality);
+      final compressedBlob = await _canvasToBlob(canvas, quality);
       final int compressedSize = compressedBlob.size.toInt();
 
       // Crear URL para el blob comprimido
-      final String compressedUrl = html.Url.createObjectUrl(compressedBlob);
+      final String compressedUrl = URL.createObjectURL(compressedBlob);
 
       // Convertir a base64
       final String base64String = await _blobToBase64(compressedBlob);
 
       // Limpiar URLs
-      html.Url.revokeObjectUrl(imageUrl);
+      URL.revokeObjectURL(imageUrl);
 
       final double reduction =
           double.parse(((originalSize - compressedSize) / originalSize * 100).toStringAsFixed(1));
@@ -115,7 +116,7 @@ class WebImageCompressionService {
       // Si hay error, retornar la imagen original en base64
       return {
         'base64': 'data:image/jpeg;base64,${base64Encode(await imageFile.readAsBytes())}',
-        'blob': html.Blob([await imageFile.readAsBytes()]),
+        'blob': Blob([(await imageFile.readAsBytes()).toJS].toJS),
         'url': null,
         'originalSize': (await imageFile.readAsBytes()).length,
         'compressedSize': (await imageFile.readAsBytes()).length,
@@ -158,12 +159,70 @@ class WebImageCompressionService {
   }
 
   /// Convierte un Blob a base64
-  static Future<String> _blobToBase64(html.Blob blob) async {
-    final html.FileReader reader = html.FileReader();
+  static Future<String> _blobToBase64(Blob blob) async {
+    final completer = Completer<String>();
+    final reader = FileReader();
+    
+    reader.addEventListener('load', (event) {
+      try {
+        final List<int> bytes = List<int>.from(
+          (reader.result as JSUint8Array).toDart,
+        );
+        completer.complete(base64Encode(bytes));
+      } catch (e) {
+        completer.completeError(e);
+      }
+    }.toJS);
+    
+    reader.addEventListener('error', (event) {
+      completer.completeError('Failed to read blob');
+    }.toJS);
+    
     reader.readAsArrayBuffer(blob);
-    await reader.onLoad.first;
-    final List<int> bytes = List<int>.from(reader.result as List<dynamic>);
-    return base64Encode(bytes);
+    return completer.future;
+  }
+
+  /// Convierte un canvas a blob de forma asincrónica
+  static Future<Blob> _canvasToBlob(HTMLCanvasElement canvas, double quality) {
+    final completer = Completer<Blob>();
+    
+    canvas.toBlob(
+      (blob) {
+        if (blob != null) {
+          completer.complete(blob);
+        } else {
+          completer.completeError('Failed to convert canvas to blob');
+        }
+      }.toJS,
+      'image/jpeg',
+      quality.toJS,
+    );
+    
+    return completer.future;
+  }
+
+  /// Espera a que una imagen HTML se cargue
+  static Future<void> _waitForImageLoad(HTMLImageElement img) {
+    final completer = Completer<void>();
+    late EventListener onLoadListener;
+    late EventListener onErrorListener;
+    
+    onLoadListener = (((event) {
+      img.removeEventListener('load', onLoadListener);
+      img.removeEventListener('error', onErrorListener);
+      completer.complete();
+    }).toJS as EventListener);
+    
+    onErrorListener = (((event) {
+      img.removeEventListener('load', onLoadListener);
+      img.removeEventListener('error', onErrorListener);
+      completer.completeError('Failed to load image');
+    }).toJS as EventListener);
+    
+    img.addEventListener('load', onLoadListener);
+    img.addEventListener('error', onErrorListener);
+    
+    return completer.future;
   }
 
   /// Formatea bytes a formato legible
